@@ -275,8 +275,8 @@ class Model (with_metaclass(MetaModel, Hash)):
 		if pipe is None:
 			_pipe.execute()
 
-	def prefix (self):
-		cls = self.__class__
+	@classmethod
+	def prefix (cls):
 		return Model._cls2prefix[cls] if cls in Model._cls2prefix else cls.__name__.lower()
 
 	def key (self):
