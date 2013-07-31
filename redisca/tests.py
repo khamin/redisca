@@ -116,7 +116,7 @@ class ModelTestCase (TestCase):
 
 	def test_reference (self):
 		user = User(1)
-		user['name'] = 'John Smith'
+		user.name = 'John Smith'
 
 		Language(1)['name'] = 'English'
 		user.lang = Language(1)
@@ -126,6 +126,9 @@ class ModelTestCase (TestCase):
 		self.assertEqual(user.lang, Language(1))
 
 		user.save()
+
+		# Check references
+		self.assertEqual(User.name.find('John Smith'), set([User(1)]))
 
 		self.assertFalse(user.loaded())
 		self.assertEqual(user['lang'], '1')

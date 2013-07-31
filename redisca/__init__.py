@@ -132,6 +132,8 @@ class Field (object):
 		self._field = field
 
 	def __get__ (self, model, owner):
+		self._owner = owner
+
 		if model is None:
 			return self
 
@@ -139,6 +141,12 @@ class Field (object):
 
 	def __set__ (self, model, value):
 		model[self._field] = value
+
+	def find (self, val):
+		assert self._index
+
+		key = ':'.join((self._owner.prefix(), self._field, str(val)))
+		return set([self._owner(id) for id in Model._redis.smembers(key)])
 
 	def after_save (self, model, name, pipe=None):
 		pass
@@ -182,6 +190,8 @@ class Reference (Field):
 		self._cls = cls
 
 	def __get__ (self, model, owner):
+		self._owner = owner
+
 		if model is None:
 			return self
 
@@ -221,7 +231,7 @@ class MetaModel (type):
 		return cls
 
 	def __call__ (cls, id, *args, **kw):
-		id = str(id)
+		id = id.decode('utf-8') if type(id) is bytes else str(id)
 
 		if id not in cls._objects:
 			cls._objects[id] = object.__new__(cls, *args, **kw)
@@ -281,38 +291,3 @@ class Model (with_metaclass(MetaModel, Hash)):
 
 	def key (self):
 		return ':'.join((self.prefix(), self._id))
-
-	def children (self, cls):
-		key = self._children_refkey(cls)
-		return set([cls(id) for id in Model._redis.smembers(key)])
-
-	def add_child (self, model, pipe=None):
-		_pipe = self.pipe(pipe)
-		key = self._children_refkey(model.__class__)
-		_pipe.sadd(key, model._id)
-
-		if pipe is None:
-			_pipe.execute()
-
-	def remove_child (self, model, pipe=None):
-		_pipe = self.pipe(pipe)
-		key = self._children_refkey(model.__class__)
-		_pipe.srem(key, model._id)
-
-		if pipe is None:
-			_pipe.execute()
-
-	def remove_childen (self, cls, pipe=None):
-		_pipe = self.pipe(pipe)
-		key = self._children_refkey(cls)
-		_pipe.delete(key)
-
-		if pipe is None:
-			_pipe.execute()
-
-	def is_child (self, model):
-		key = self._children_refkey(model.__class__)
-		return Model._redis.sismember(key, model._id)
-
-	def _children_refkey (self, cls):
-		return ':'.join((self._key, cls.__name__.lower()))
