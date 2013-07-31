@@ -14,9 +14,14 @@ class Language (Model):
 
 @prefix('u')
 class User (Model):
+	email = Field(
+		field='email',
+		unique=True,
+	)
+
 	name = Field(
 		field='name',
-		index=True
+		index=True,
 	)
 
 	lang = Reference(
@@ -148,3 +153,13 @@ class ModelTestCase (TestCase):
 
 		self.assertFalse(Model._redis.exists('u:1'))
 		self.assertFalse(Model._redis.exists('language:1'))
+
+	def test_duplicate_field (self):
+		user = User(1)
+		user.email = 'foo@bar.com'
+		user.save()
+
+		user = User(2)
+		user.email = 'foo@bar.com'
+
+		self.assertRaises(Exception, user.save)

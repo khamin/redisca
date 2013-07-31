@@ -2,9 +2,11 @@
 
 import re
 
+from sys import version_info
 from six import with_metaclass
 
 
+PY3K = version_info[0] == 3
 EMAIL_REGEXP = re.compile(r"^[a-z0-9]+[_a-z0-9-]*(\.[_a-z0-9-]+)*@[a-z0-9]+[\.a-z0-9-]*(\.[a-z]{2,4})$")
 
 
@@ -127,8 +129,9 @@ class Hash (Key):
 
 
 class Field (object):
-	def __init__ (self, field, index=False):
+	def __init__ (self, field, index=False, unique=False):
 		self._index = bool(index)
+		self._unique = bool(unique)
 		self._field = field
 
 	def __get__ (self, model, owner):
@@ -145,7 +148,7 @@ class Field (object):
 	def find (self, val):
 		assert self._index
 
-		key = ':'.join((self._owner.prefix(), self._field, str(val)))
+		key = index_key(self._owner.prefix(), self._field, val)
 		return set([self._owner(id) for id in Model._redis.smembers(key)])
 
 	def after_save (self, model, name, pipe=None):
@@ -154,9 +157,17 @@ class Field (object):
 	def before_save (self, model, name, pipe=None):
 		assert isinstance(model, Model)
 
-		if self._index:
-			val = str(model[name])
-			key = ':'.join((model.prefix(), name, val))
+		if self._index or self._unique and name in model.diff():
+			key = index_key(model.prefix(), name, model[name])
+
+			if self._unique:
+				model_id = bytes(model._id, 'utf-8') if PY3K else model._id
+				ids = Model._redis.smembers(key)
+				ids.discard(model._id)
+
+				if len(ids):
+					raise Exception('Duplicate key error')
+
 			pipe.sadd(key, model._id)
 
 	def after_delete (self, model, name, pipe=None):
@@ -171,8 +182,8 @@ class Field (object):
 			pipe.srem(key, model._id)
 
 
-def index_key (prefix, fieldname, value):
-	return 
+def index_key (prefix, name, value):
+	return ':'.join((prefix, name, str(value)))
 
 
 class Email (Field):
