@@ -160,7 +160,7 @@ class Field (object):
 		assert self.index
 
 		key = index_key(self.owner.prefix(), self.field, val)
-		return set([self.owner(id) for id in db.smembers(key)])
+		return set([self.owner(model_id) for model_id in db.smembers(key)])
 
 	def pre_save (self, model, pipe=None):
 		assert isinstance(model, Model)
@@ -250,8 +250,8 @@ class Collection (set):
 
 
 class MetaModel (type):
-	def __new__ (meta, name, bases, dct):
-		cls = super(MetaModel, meta).__new__(meta, name, bases, dct)
+	def __new__ (mcs, name, bases, dct):
+		cls = super(MetaModel, mcs).__new__(mcs, name, bases, dct)
 
 		cls._name2field = dict([(n, f) for (n, f) in cls.__dict__.items() \
 			if isinstance(f, Field)]) # field name -> field object
@@ -259,18 +259,18 @@ class MetaModel (type):
 		cls._objects = dict() # id -> model objects registry.
 		return cls
 
-	def __call__ (cls, id, *args, **kw):
-		if PY3K and type(id) is bytes:
-			id = id.decode('utf-8')
+	def __call__ (cls, model_id, *args, **kw):
+		if PY3K and type(model_id) is bytes:
+			model_id = model_id.decode('utf-8')
 
 		else:
-			id = str(id)
+			model_id = str(model_id)
 
-		if id not in cls._objects:
-			cls._objects[id] = object.__new__(cls, *args, **kw)
-			cls._objects[id].__init__(id)
+		if model_id not in cls._objects:
+			cls._objects[model_id] = object.__new__(cls, *args, **kw)
+			cls._objects[model_id].__init__(model_id)
 
-		return cls._objects[id]
+		return cls._objects[model_id]
 
 
 def prefix (val):
