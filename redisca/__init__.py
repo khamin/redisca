@@ -3,7 +3,6 @@
 import re
 
 from sys import version_info
-from six import with_metaclass
 
 
 PY3K = version_info[0] == 3
@@ -71,7 +70,11 @@ class Hash (Key):
 		self._data = dict()
 
 		for k, v in Model._redis.hgetall(self._key).items():
-			self._data[k.decode(encoding='UTF-8')] = v.decode(encoding='UTF-8')
+			if PY3K:
+				k = k.decode(encoding='UTF-8')
+				v = v.decode(encoding='UTF-8')
+
+			self._data[k] = v
 
 		self._exists = bool(len(self._data))
 
@@ -242,7 +245,11 @@ class MetaModel (type):
 		return cls
 
 	def __call__ (cls, id, *args, **kw):
-		id = id.decode('utf-8') if type(id) is bytes else str(id)
+		if PY3K and type(id) is bytes:
+			id = id.decode('utf-8')
+
+		else:
+			id = str(id)
 
 		if id not in cls._objects:
 			cls._objects[id] = object.__new__(cls, *args, **kw)
@@ -261,7 +268,14 @@ def prefix (val):
 	return f
 
 
-class Model (with_metaclass(MetaModel, Hash)):
+if PY3K:
+	exec('class BaseModel (Hash, metaclass=MetaModel): pass')
+
+else:
+	exec('class BaseModel (Hash): __metaclass__ = MetaModel')
+
+
+class Model (BaseModel):
 	_cls2prefix = dict()
 
 	def __init__ (self, id):
