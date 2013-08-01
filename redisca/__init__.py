@@ -171,6 +171,20 @@ class Field (object):
 				if len(ids):
 					raise Exception('Duplicate key error')
 
+			# Get previous index value.
+			if model.loaded() and self._field in model._data:
+				prev_val = model._data[self._field]
+
+			else:
+				prev_val = Model._redis.hget(model._key, self._field)
+
+				if prev_val is not None:
+					prev_val = prev_val.decode('utf-8')
+
+			if prev_val is not None: # Remove previous value index.
+				prev_key = index_key(model.prefix(), self._field, prev_val)
+				pipe.srem(prev_key, model._id)
+
 			pipe.sadd(key, model._id)
 
 	def after_delete (self, model, pipe=None):

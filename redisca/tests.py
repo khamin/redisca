@@ -112,6 +112,12 @@ class ModelTestCase (TestCase):
 		self.assertTrue(Model._redis.exists('u:name:John Smith'))
 		self.assertEqual(Model._redis.smembers('u:name:John Smith'), set([b'1']))
 
+		user.name = 'Steve Gobs'
+		user.save()
+
+		self.assertFalse(Model._redis.exists('u:name:John Smith'))
+		self.assertEqual(Model._redis.smembers('u:name:Steve Gobs'), set([b'1']))
+
 		user.delete()
 		self.assertTrue(user.loaded())
 		self.assertEqual(user.diff(), dict())
