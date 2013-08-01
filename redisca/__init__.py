@@ -9,6 +9,14 @@ PY3K = version_info[0] == 3
 EMAIL_REGEXP = re.compile(r"^[a-z0-9]+[_a-z0-9-]*(\.[_a-z0-9-]+)*@[a-z0-9]+[\.a-z0-9-]*(\.[a-z]{2,4})$")
 
 
+db = None
+
+
+def setdb (redis):
+	global db
+	db = redis
+
+
 class Key (object):
 	def __init__ (self, key):
 		self._key = key
@@ -18,7 +26,7 @@ class Key (object):
 		""" Check if model key exists. """
 
 		if self._exists is None:
-			self._exists = Model._redis.exists(self._key)
+			self._exists = db.exists(self._key)
 
 		return self._exists
 
@@ -34,7 +42,7 @@ class Key (object):
 			_pipe.execute()
 
 	def pipe (self, pipe=None):
-		return Model._redis.pipeline(transaction=True) if pipe is None else pipe
+		return db.pipeline(transaction=True) if pipe is None else pipe
 
 
 class Hash (Key):
@@ -62,14 +70,14 @@ class Hash (Key):
 		self._diff[name] = None
 
 	def load (self):
-		""" Load data into model if needed. """
+		""" Load data into hash if needed. """
 
 		if self.loaded():
 			return
 
 		self._data = dict()
 
-		for k, v in Model._redis.hgetall(self._key).items():
+		for k, v in db.hgetall(self._key).items():
 			if PY3K:
 				k = k.decode(encoding='UTF-8')
 				v = v.decode(encoding='UTF-8')
@@ -152,7 +160,7 @@ class Field (object):
 		assert self.index
 
 		key = index_key(self.owner.prefix(), self.field, val)
-		return set([self.owner(id) for id in Model._redis.smembers(key)])
+		return set([self.owner(id) for id in db.smembers(key)])
 
 	def pre_save (self, model, pipe=None):
 		assert isinstance(model, Model)
@@ -162,7 +170,7 @@ class Field (object):
 
 			if self.unique:
 				model_id = bytes(model._id, 'utf-8') if PY3K else model._id
-				ids = Model._redis.smembers(key)
+				ids = db.smembers(key)
 				ids.discard(model._id)
 
 				if len(ids):
@@ -173,7 +181,7 @@ class Field (object):
 				prev_val = model._data[self.field]
 
 			else:
-				prev_val = Model._redis.hget(model._key, self.field)
+				prev_val = db.hget(model._key, self.field)
 
 				if PY3K and prev_val is not None:
 					prev_val = prev_val.decode('utf-8')
@@ -225,7 +233,7 @@ class Reference (Field):
 
 class Collection (set):
 	def save (self):
-		pipe = Model._redis.pipeline()
+		pipe = db.pipeline()
 
 		for model in self:
 			model.save(pipe)
@@ -233,7 +241,7 @@ class Collection (set):
 		pipe.execute()
 
 	def delete (self):
-		pipe = Model._redis.pipeline()
+		pipe = db.pipeline()
 
 		for model in self:
 			model.delete(pipe=pipe)

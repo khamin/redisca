@@ -7,9 +7,11 @@ from redisca import Model
 from redisca import Field
 from redisca import Reference
 from redisca import prefix
+from redisca import setdb
 
 
-Model._redis = Redis()
+redis = Redis()
+setdb(redis)
 
 
 class Language (Model):
@@ -36,7 +38,7 @@ class User (Model):
 
 class ModelTestCase (TestCase):
 	def setUp (self):
-		Model._redis.flushdb()
+		redis.flushdb()
 
 	def tearDown (self):
 		User.forget_all()
@@ -111,23 +113,23 @@ class ModelTestCase (TestCase):
 		user.save()
 		self.assertFalse(user.loaded())
 		self.assertEqual(user.diff(), dict())
-		self.assertTrue(Model._redis.exists('u:1'))
-		self.assertEqual(Model._redis.hgetall('u:1'), {b'name': b'John Smith'})
-		self.assertTrue(Model._redis.exists('u:name:John Smith'))
-		self.assertEqual(Model._redis.smembers('u:name:John Smith'), set([b'1']))
+		self.assertTrue(redis.exists('u:1'))
+		self.assertEqual(redis.hgetall('u:1'), {b'name': b'John Smith'})
+		self.assertTrue(redis.exists('u:name:John Smith'))
+		self.assertEqual(redis.smembers('u:name:John Smith'), set([b'1']))
 
 		user.name = 'Steve Gobs'
 		user.save()
 
-		self.assertFalse(Model._redis.exists('u:name:John Smith'))
-		self.assertEqual(Model._redis.smembers('u:name:Steve Gobs'), set([b'1']))
+		self.assertFalse(redis.exists('u:name:John Smith'))
+		self.assertEqual(redis.smembers('u:name:Steve Gobs'), set([b'1']))
 
 		user.delete()
 		self.assertTrue(user.loaded())
 		self.assertEqual(user.diff(), dict())
 
-		self.assertFalse(Model._redis.exists('u:1'))
-		self.assertFalse(Model._redis.exists('u:name:John Smith'))
+		self.assertFalse(redis.exists('u:1'))
+		self.assertFalse(redis.exists('u:name:John Smith'))
 
 	def test_reference (self):
 		user = User(1)
@@ -150,19 +152,19 @@ class ModelTestCase (TestCase):
 		self.assertEqual(user.lang, Language(1))
 		self.assertTrue(user.loaded())
 
-		self.assertTrue(Model._redis.exists('u:1'))
-		self.assertEqual(Model._redis.hget('u:1', 'lang'), b'1')
-		self.assertFalse(Model._redis.exists('language:1'))
+		self.assertTrue(redis.exists('u:1'))
+		self.assertEqual(redis.hget('u:1', 'lang'), b'1')
+		self.assertFalse(redis.exists('language:1'))
 
 		Language(1).save()
 
-		self.assertTrue(Model._redis.exists('language:1'))
+		self.assertTrue(redis.exists('language:1'))
 
 		user.delete()
 		Language(1).delete()
 
-		self.assertFalse(Model._redis.exists('u:1'))
-		self.assertFalse(Model._redis.exists('language:1'))
+		self.assertFalse(redis.exists('u:1'))
+		self.assertFalse(redis.exists('language:1'))
 
 	def test_dupfield (self):
 		user = User(1)
