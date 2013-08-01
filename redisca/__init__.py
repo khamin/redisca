@@ -160,7 +160,7 @@ class Field (object):
 	def before_save (self, model, pipe=None):
 		assert isinstance(model, Model)
 
-		if self._index or self._unique and self._field in model.diff():
+		if self._index or self._unique:
 			key = index_key(model.prefix(), self._field, model[self._field])
 
 			if self._unique:
@@ -283,13 +283,14 @@ class Model (BaseModel):
 
 	def delete (self, pipe=None):
 		_pipe = self.pipe(pipe)
+		fields = self._name2field.values()
 
-		for field in self._name2field.values():
+		for field in fields:
 			field.before_delete(self, _pipe)
 
 		super(Model, self).delete(_pipe)
 
-		for field in self._name2field.values():
+		for field in fields:
 			field.after_delete(self, _pipe)
 
 		if pipe is None:
@@ -297,13 +298,14 @@ class Model (BaseModel):
 
 	def save (self, pipe=None):
 		_pipe = self.pipe(pipe)
+		fields = [f for f in self._name2field.values() if f._field in self.diff()]
 
-		for field in self._name2field.values():
+		for field in fields:
 			field.before_save(self, _pipe)
 
 		super(Model, self).save(_pipe)
 
-		for field in self._name2field.values():
+		for field in fields:
 			field.after_save(self, _pipe)
 
 		if pipe is None:
