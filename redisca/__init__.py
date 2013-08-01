@@ -154,10 +154,7 @@ class Field (object):
 		key = index_key(self._owner.prefix(), self._field, val)
 		return set([self._owner(id) for id in Model._redis.smembers(key)])
 
-	def after_save (self, model, pipe=None):
-		pass
-
-	def before_save (self, model, pipe=None):
+	def pre_save (self, model, pipe=None):
 		assert isinstance(model, Model)
 
 		if self._index or self._unique:
@@ -178,7 +175,7 @@ class Field (object):
 			else:
 				prev_val = Model._redis.hget(model._key, self._field)
 
-				if prev_val is not None:
+				if PY3K and prev_val is not None:
 					prev_val = prev_val.decode('utf-8')
 
 			if prev_val is not None: # Remove previous value index.
@@ -187,10 +184,7 @@ class Field (object):
 
 			pipe.sadd(key, model._id)
 
-	def after_delete (self, model, pipe=None):
-		pass
-
-	def before_delete (self, model, pipe=None):
+	def pre_delete (self, model, pipe=None):
 		assert isinstance(model, Model)
 
 		if self._index:
@@ -300,12 +294,9 @@ class Model (BaseModel):
 		fields = self._name2field.values()
 
 		for field in fields:
-			field.before_delete(self, _pipe)
+			field.pre_delete(self, _pipe)
 
 		super(Model, self).delete(_pipe)
-
-		for field in fields:
-			field.after_delete(self, _pipe)
 
 		if pipe is None:
 			_pipe.execute()
@@ -315,12 +306,9 @@ class Model (BaseModel):
 		fields = [f for f in self._name2field.values() if f._field in self.diff()]
 
 		for field in fields:
-			field.before_save(self, _pipe)
+			field.pre_save(self, _pipe)
 
 		super(Model, self).save(_pipe)
-
-		for field in fields:
-			field.after_save(self, _pipe)
 
 		if pipe is None:
 			_pipe.execute()
