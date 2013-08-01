@@ -154,14 +154,14 @@ class Field (object):
 		key = index_key(self._owner.prefix(), self._field, val)
 		return set([self._owner(id) for id in Model._redis.smembers(key)])
 
-	def after_save (self, model, name, pipe=None):
+	def after_save (self, model, pipe=None):
 		pass
 
-	def before_save (self, model, name, pipe=None):
+	def before_save (self, model, pipe=None):
 		assert isinstance(model, Model)
 
-		if self._index or self._unique and name in model.diff():
-			key = index_key(model.prefix(), name, model[name])
+		if self._index or self._unique and self._field in model.diff():
+			key = index_key(model.prefix(), self._field, model[self._field])
 
 			if self._unique:
 				model_id = bytes(model._id, 'utf-8') if PY3K else model._id
@@ -173,15 +173,14 @@ class Field (object):
 
 			pipe.sadd(key, model._id)
 
-	def after_delete (self, model, name, pipe=None):
+	def after_delete (self, model, pipe=None):
 		pass
 
-	def before_delete (self, model, name, pipe=None):
+	def before_delete (self, model, pipe=None):
 		assert isinstance(model, Model)
 
 		if self._index:
-			val = str(model[name])
-			key = ':'.join((model.prefix(), name, val))
+			key = index_key(model.prefix(), self._field, model[self._field])
 			pipe.srem(key, model._id)
 
 
@@ -285,13 +284,13 @@ class Model (BaseModel):
 	def delete (self, pipe=None):
 		_pipe = self.pipe(pipe)
 
-		for name, field in self._name2field.items():
-			field.before_delete(self, name, _pipe)
+		for field in self._name2field.values():
+			field.before_delete(self, _pipe)
 
 		super(Model, self).delete(_pipe)
 
-		for name, field in self._name2field.items():
-			field.after_delete(self, name, _pipe)
+		for field in self._name2field.values():
+			field.after_delete(self, _pipe)
 
 		if pipe is None:
 			_pipe.execute()
@@ -299,13 +298,13 @@ class Model (BaseModel):
 	def save (self, pipe=None):
 		_pipe = self.pipe(pipe)
 
-		for name, field in self._name2field.items():
-			field.before_save(self, name, _pipe)
+		for field in self._name2field.values():
+			field.before_save(self, _pipe)
 
 		super(Model, self).save(_pipe)
 
-		for name, field in self._name2field.items():
-			field.after_save(self, name, _pipe)
+		for field in self._name2field.values():
+			field.after_save(self, _pipe)
 
 		if pipe is None:
 			_pipe.execute()
