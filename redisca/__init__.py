@@ -133,34 +133,34 @@ class Hash (Key):
 
 class Field (object):
 	def __init__ (self, field, index=False, unique=False):
-		self._index = bool(index)
-		self._unique = bool(unique)
-		self._field = field
+		self.index = bool(index)
+		self.unique = bool(unique)
+		self.field = field
 
 	def __get__ (self, model, owner):
-		self._owner = owner
+		self.owner = owner
 
 		if model is None:
 			return self
 
-		return model[self._field]
+		return model[self.field]
 
 	def __set__ (self, model, value):
-		model[self._field] = value
+		model[self.field] = value
 
 	def find (self, val):
-		assert self._index
+		assert self.index
 
-		key = index_key(self._owner.prefix(), self._field, val)
-		return set([self._owner(id) for id in Model._redis.smembers(key)])
+		key = index_key(self.owner.prefix(), self.field, val)
+		return set([self.owner(id) for id in Model._redis.smembers(key)])
 
 	def pre_save (self, model, pipe=None):
 		assert isinstance(model, Model)
 
-		if self._index or self._unique:
-			key = index_key(model.prefix(), self._field, model[self._field])
+		if self.index or self.unique:
+			key = index_key(model.prefix(), self.field, model[self.field])
 
-			if self._unique:
+			if self.unique:
 				model_id = bytes(model._id, 'utf-8') if PY3K else model._id
 				ids = Model._redis.smembers(key)
 				ids.discard(model._id)
@@ -169,17 +169,17 @@ class Field (object):
 					raise Exception('Duplicate key error')
 
 			# Get previous index value.
-			if model.loaded() and self._field in model._data:
-				prev_val = model._data[self._field]
+			if model.loaded() and self.field in model._data:
+				prev_val = model._data[self.field]
 
 			else:
-				prev_val = Model._redis.hget(model._key, self._field)
+				prev_val = Model._redis.hget(model._key, self.field)
 
 				if PY3K and prev_val is not None:
 					prev_val = prev_val.decode('utf-8')
 
 			if prev_val is not None: # Remove previous value index.
-				prev_key = index_key(model.prefix(), self._field, prev_val)
+				prev_key = index_key(model.prefix(), self.field, prev_val)
 				pipe.srem(prev_key, model._id)
 
 			pipe.sadd(key, model._id)
@@ -187,8 +187,8 @@ class Field (object):
 	def pre_delete (self, model, pipe=None):
 		assert isinstance(model, Model)
 
-		if self._index:
-			key = index_key(model.prefix(), self._field, model[self._field])
+		if self.index:
+			key = index_key(model.prefix(), self.field, model[self.field])
 			pipe.srem(key, model._id)
 
 
@@ -211,21 +211,21 @@ class Reference (Field):
 		self._cls = cls
 
 	def __get__ (self, model, owner):
-		self._owner = owner
+		self.owner = owner
 
 		if model is None:
 			return self
 
-		return self._cls(model[self._field])
+		return self._cls(model[self.field])
 
 	def __set__ (self, model, parent):
 		assert parent.__class__ is self._cls
-		model[self._field] = parent._id
+		model[self.field] = parent._id
 
 
 class Collection (set):
 	def save (self):
-		pipe = Model._Model._redis.pipeline()
+		pipe = Model._redis.pipeline()
 
 		for model in self:
 			model.save(pipe)
@@ -285,15 +285,14 @@ else:
 class Model (BaseModel):
 	_cls2prefix = dict()
 
-	def __init__ (self, id):
-		self._id = id
+	def __init__ (self, model_id):
+		self._id = model_id
 		super(Model, self).__init__(self.key())
 
 	def delete (self, pipe=None):
 		_pipe = self.pipe(pipe)
-		fields = self._name2field.values()
 
-		for field in fields:
+		for field in self._name2field.values():
 			field.pre_delete(self, _pipe)
 
 		super(Model, self).delete(_pipe)
@@ -303,7 +302,8 @@ class Model (BaseModel):
 
 	def save (self, pipe=None):
 		_pipe = self.pipe(pipe)
-		fields = [f for f in self._name2field.values() if f._field in self.diff()]
+		diff = self.diff()
+		fields = [f for f in self._name2field.values() if f.field in diff]
 
 		for field in fields:
 			field.pre_save(self, _pipe)
@@ -315,7 +315,14 @@ class Model (BaseModel):
 
 	@classmethod
 	def prefix (cls):
-		return Model._cls2prefix[cls] if cls in Model._cls2prefix else cls.__name__.lower()
+		return Model._cls2prefix[cls] \
+			if cls in Model._cls2prefix \
+				else cls.__name__.lower()
 
 	def key (self):
 		return ':'.join((self.prefix(), self._id))
+
+	@classmethod
+	def forget_all (cls):
+		""" Cleanup models registry. """
+		cls._objects = dict()

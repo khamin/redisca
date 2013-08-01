@@ -2,7 +2,11 @@
 
 from unittest import TestCase
 from redis import Redis
-from redisca import *
+
+from redisca import Model
+from redisca import Field
+from redisca import Reference
+from redisca import prefix
 
 
 Model._redis = Redis()
@@ -35,8 +39,8 @@ class ModelTestCase (TestCase):
 		Model._redis.flushdb()
 
 	def tearDown (self):
-		User._objects = dict()
-		Language._objects = dict()
+		User.forget_all()
+		Language.forget_all()
 
 	def test_registry (self):
 		self.assertTrue(User(1) is User(1))
@@ -160,7 +164,7 @@ class ModelTestCase (TestCase):
 		self.assertFalse(Model._redis.exists('u:1'))
 		self.assertFalse(Model._redis.exists('language:1'))
 
-	def test_duplicate_field (self):
+	def test_dupfield (self):
 		user = User(1)
 		user.email = 'foo@bar.com'
 		user.save()
