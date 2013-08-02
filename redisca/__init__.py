@@ -331,6 +331,6 @@ class Model (BaseModel):
 		return ':'.join((self.prefix(), self._id))
 
 	@classmethod
-	def forget_all (cls):
+	def free_all (cls):
 		""" Cleanup models registry. """
 		cls._objects = dict()

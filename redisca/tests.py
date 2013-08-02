@@ -41,8 +41,8 @@ class ModelTestCase (TestCase):
 		redis.flushdb()
 
 	def tearDown (self):
-		User.forget_all()
-		Language.forget_all()
+		User.free_all()
+		Language.free_all()
 
 	def test_registry (self):
 		self.assertTrue(User(1) is User(1))
