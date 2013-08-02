@@ -330,6 +330,9 @@ class Model (BaseModel):
 	def key (self):
 		return ':'.join((self.prefix(), self._id))
 
+	def free (self):
+		del self.__class__._objects[self._id]
+
 	@classmethod
 	def free_all (cls):
 		""" Cleanup models registry. """
