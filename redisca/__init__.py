@@ -157,7 +157,7 @@ class Field (object):
 		model[self.field] = value
 
 	def find (self, val):
-		assert self.index
+		assert self.index or self.unique
 
 		key = index_key(self.owner.prefix(), self.field, val)
 		return set([self.owner(model_id) for model_id in db.smembers(key)])
