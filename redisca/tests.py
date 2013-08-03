@@ -1,10 +1,17 @@
 # -*- coding: utf-8 -
 
 from unittest import TestCase
+from datetime import datetime
+from time import time
 from redis import Redis
 
 from redisca import Model
 from redisca import Field
+from redisca import Email
+from redisca import Integer
+from redisca import String
+from redisca import MD5Pass
+from redisca import DateTime
 from redisca import Reference
 from redisca import prefix
 from redisca import setdb
@@ -20,14 +27,31 @@ class Language (Model):
 
 @prefix('u')
 class User (Model):
-	email = Field(
-		field='email',
+	email = Email(
+		field='eml',
 		unique=True,
 	)
 
-	name = Field(
+	password = MD5Pass(
+		field='pass',
+		minlen=4,
+	)
+
+	name = String(
 		field='name',
+		minlen=4,
+		maxlen=10,
 		index=True,
+	)
+
+	created = DateTime(
+		field='created',
+	)
+
+	age = Integer(
+		field='age',
+		minval=0,
+		maxval=100,
 	)
 
 	lang = Reference(
@@ -175,3 +199,79 @@ class ModelTestCase (TestCase):
 		user.email = 'foo@bar.com'
 
 		self.assertRaises(Exception, user.save)
+
+	def test_email (self):
+		user = User(1)
+		user.email = 'foo@bar.com'
+		self.assertEqual(user['eml'], 'foo@bar.com')
+
+		with self.assertRaises(Exception):
+			user.email = 'foo@@bar.com'
+
+		self.assertEqual(user.email, 'foo@bar.com')
+
+	def test_int (self):
+		user = User(1)
+		user.age = '26'
+		self.assertEqual(user['age'], 26)
+
+		with self.assertRaises(Exception):
+			user.age = 'foobar'
+
+		with self.assertRaises(Exception):
+			user.age = '-1'
+
+		with self.assertRaises(Exception):
+			user.age = -1
+
+		with self.assertRaises(Exception):
+			user.age = '101'
+
+		with self.assertRaises(Exception):
+			user.age = 101
+
+		self.assertEqual(user.age, 26)
+
+	def test_datetime (self):
+		ts = int(time())
+		dt = datetime.fromtimestamp(ts)
+
+		user = User(1)
+		user.created = dt
+		self.assertEqual(user.created, dt)
+		self.assertEqual(user['created'], ts)
+
+		user.created = ts
+		self.assertEqual(user.created, dt)
+		self.assertEqual(user['created'], ts)
+
+		with self.assertRaises(Exception):
+			user.created = 'foobar'
+
+	def test_md5pass (self):
+		user = User(1)
+		user.password = 'foobar'
+		self.assertEqual(user.password, '3858f62230ac3c915f300c664312c63f')
+		self.assertEqual(user['pass'], '3858f62230ac3c915f300c664312c63f')
+
+		with self.assertRaises(Exception):
+			user.password = 'foo'
+
+		with self.assertRaises(Exception):
+			user.password = 123
+
+	def test_string (self):
+		user = User(1)
+		user.name = 'foobar'
+		self.assertEqual(user.name, 'foobar')
+		self.assertEqual(user['name'], 'foobar')
+
+		user.name = 1234
+		self.assertEqual(user.name, '1234')
+		self.assertEqual(user['name'], '1234')
+
+		with self.assertRaises(Exception):
+			user.name = 'foo'
+
+		with self.assertRaises(Exception):
+			user.name = '1234567890_'

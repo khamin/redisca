@@ -2,7 +2,9 @@
 
 import re
 
+from hashlib import md5
 from sys import version_info
+from datetime import datetime
 
 
 PY3K = version_info[0] == 3
@@ -147,11 +149,7 @@ class Field (object):
 
 	def __get__ (self, model, owner):
 		self.owner = owner
-
-		if model is None:
-			return self
-
-		return model[self.field]
+		return self if model is None else model[self.field]
 
 	def __set__ (self, model, value):
 		model[self.field] = value
@@ -204,12 +202,90 @@ def index_key (prefix, name, value):
 	return ':'.join((prefix, name, str(value)))
 
 
+class String (Field):
+	def __init__ (self, minlen=None, maxlen=None, **kw):
+		super(String, self).__init__(**kw)
+
+		if minlen is not None and maxlen is not None:
+			assert minlen < maxlen
+
+		self.minlen = minlen
+		self.maxlen = maxlen
+
+	def __get__ (self, model, owner):
+		val = super(String, self).__get__(model, owner)
+		return val.decode('utf-8') if PY3K and type(val) is bytes else val
+
+	def __set__ (self, model, value):
+		value = str(value)
+
+		if self.minlen is not None and len(value) < self.minlen:
+			raise Exception('Minimal length check failed')
+
+		if self.maxlen is not None and len(value) > self.maxlen:
+			raise Exception('Maximum length check failed')
+
+		model[self.field] = value
+
+
 class Email (Field):
 	def __set__ (self, model, value):
 		if EMAIL_REGEXP.match(value) == None:
 			raise Exception('Email validation failed')
 
 		return super(Email, self).__set__(model, value)
+
+
+class Integer (Field):
+	def __init__ (self, minval=None, maxval=None, **kw):
+		super(Integer, self).__init__(**kw)
+
+		if minval is not None and maxval is not None:
+			assert minval < maxval
+
+		self.minval = minval
+		self.maxval = maxval
+
+	def __get__ (self, model, owner):
+		self.owner = owner
+		return self if model is None else int(model[self.field])
+
+	def __set__ (self, model, value):
+		value = int(value)
+
+		if self.minval is not None and value < self.minval:
+			raise Exception('Minimal value check failed')
+
+		if self.maxval is not None and value > self.maxval:
+			raise Exception('Maximum value check failed')
+
+		model[self.field] = value
+
+
+class DateTime (Field):
+	def __get__ (self, model, owner):
+		self.owner = owner
+
+		return self if model is None else \
+			datetime.fromtimestamp(int(model[self.field]))
+
+	def __set__ (self, model, value):
+		if type(value) is datetime:
+			value = value.strftime('%s')
+
+		model[self.field] = int(value)
+
+
+class MD5Pass (String):
+	def __set__ (self, model, value):
+		super(MD5Pass, self).__set__(model, value)
+
+		val = model[self.field]
+
+		if PY3K:
+			val = val.encode('utf-8')
+
+		model[self.field] = md5(val).hexdigest()
 
 
 class Reference (Field):
@@ -220,11 +296,7 @@ class Reference (Field):
 
 	def __get__ (self, model, owner):
 		self.owner = owner
-
-		if model is None:
-			return self
-
-		return self._cls(model[self.field])
+		return self if model is None else self._cls(model[self.field])
 
 	def __set__ (self, model, parent):
 		assert parent.__class__ is self._cls
