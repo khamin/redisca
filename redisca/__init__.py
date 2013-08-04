@@ -205,7 +205,17 @@ class Field (object):
 		assert isinstance(model, Model)
 
 		if self.index or self.unique:
-			key = index_key(model.prefix(), self.field, model[self.field])
+			# Get previous index value.
+			if model.loaded() and self.field in model._data:
+				prev_val = model._data[self.field]
+
+			else:
+				prev_val = db.hget(model._key, self.field)
+
+				if PY3K and prev_val is not None:
+					prev_val = prev_val.decode('utf-8')
+
+			key = index_key(model.prefix(), self.field, prev_val)
 			pipe.srem(key, model._id)
 
 
