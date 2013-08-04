@@ -204,7 +204,7 @@ class Field (object):
 	def pre_delete (self, model, pipe=None):
 		assert isinstance(model, Model)
 
-		if self.index:
+		if self.index or self.unique:
 			key = index_key(model.prefix(), self.field, model[self.field])
 			pipe.srem(key, model._id)
 
