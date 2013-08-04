@@ -71,6 +71,9 @@ class Hash (Key):
 	def __delitem__ (self, name):
 		self._diff[name] = None
 
+	def get (self, name, default=None):
+		return self[name] if name in self else default
+
 	def load (self):
 		""" Load data into hash if needed. """
 
