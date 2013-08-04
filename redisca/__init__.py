@@ -184,22 +184,16 @@ class Field (object):
 			if len(ids):
 				raise Exception('Duplicate key error')
 
-		# Get previous index value.
-		if model.loaded() and self.field in model._data:
-			prev_val = model._data[self.field]
-
-		else:
-			prev_val = db.hget(model._key, self.field)
-
-			if PY3K and prev_val is not None:
-				prev_val = prev_val.decode('utf-8')
-
-		prev_key = index_key(model.prefix(), self.field, prev_val)
-		pipe.srem(prev_key, model._id)
+		pipe.srem(self._prev_idx_key(model), model._id)
 		pipe.sadd(key, model._id)
 
 	def del_index (self, model, pipe=None):
 		# Get previous index value.
+		pipe.srem(self._prev_idx_key(model), model._id)
+
+	def _prev_idx_key (self, model):
+		""" Get previous value index key. """
+
 		if model.loaded() and self.field in model._data:
 			prev_val = model._data[self.field]
 
@@ -209,8 +203,7 @@ class Field (object):
 			if PY3K and prev_val is not None:
 				prev_val = prev_val.decode('utf-8')
 
-		key = index_key(model.prefix(), self.field, prev_val)
-		pipe.srem(key, model._id)
+		return index_key(model.prefix(), self.field, prev_val)
 
 
 def index_key (prefix, name, value):
