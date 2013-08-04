@@ -57,6 +57,7 @@ class User (Model):
 	lang = Reference(
 		Language,
 		field='lang',
+		index=True,
 	)
 
 
@@ -174,6 +175,7 @@ class ModelTestCase (TestCase):
 		self.assertFalse(user.loaded())
 		self.assertEqual(user['lang'], '1')
 		self.assertEqual(user.lang, Language(1))
+		self.assertEqual(User.lang.find(Language(1)), set([User(1)]))
 		self.assertTrue(user.loaded())
 
 		self.assertTrue(redis.exists('u:1'))

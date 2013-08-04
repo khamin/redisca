@@ -325,6 +325,12 @@ class Reference (Field):
 		else:
 			model[self.field] = None
 
+	def find (self, val):
+		if isinstance(val, Model):
+			val = val._id
+
+		return super(Reference, self).find(val)
+
 
 class Collection (set):
 	def save (self):
