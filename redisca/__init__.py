@@ -173,50 +173,44 @@ class Field (object):
 		key = index_key(self.owner.prefix(), self.field, val)
 		return set([self.owner(model_id) for model_id in db.smembers(key)])
 
-	def pre_save (self, model, pipe=None):
-		assert isinstance(model, Model)
+	def save_index (self, model, pipe=None):
+		key = index_key(model.prefix(), self.field, model[self.field])
 
-		if self.index or self.unique:
-			key = index_key(model.prefix(), self.field, model[self.field])
+		if self.unique:
+			model_id = bytes(model._id, 'utf-8') if PY3K else model._id
+			ids = db.smembers(key)
+			ids.discard(model._id)
 
-			if self.unique:
-				model_id = bytes(model._id, 'utf-8') if PY3K else model._id
-				ids = db.smembers(key)
-				ids.discard(model._id)
+			if len(ids):
+				raise Exception('Duplicate key error')
 
-				if len(ids):
-					raise Exception('Duplicate key error')
+		# Get previous index value.
+		if model.loaded() and self.field in model._data:
+			prev_val = model._data[self.field]
 
-			# Get previous index value.
-			if model.loaded() and self.field in model._data:
-				prev_val = model._data[self.field]
+		else:
+			prev_val = db.hget(model._key, self.field)
 
-			else:
-				prev_val = db.hget(model._key, self.field)
+			if PY3K and prev_val is not None:
+				prev_val = prev_val.decode('utf-8')
 
-				if PY3K and prev_val is not None:
-					prev_val = prev_val.decode('utf-8')
+		prev_key = index_key(model.prefix(), self.field, prev_val)
+		pipe.srem(prev_key, model._id)
+		pipe.sadd(key, model._id)
 
-			prev_key = index_key(model.prefix(), self.field, prev_val)
-			pipe.srem(prev_key, model._id)
-			pipe.sadd(key, model._id)
+	def del_index (self, model, pipe=None):
+		# Get previous index value.
+		if model.loaded() and self.field in model._data:
+			prev_val = model._data[self.field]
 
-	def pre_delete (self, model, pipe=None):
-		assert isinstance(model, Model)
+		else:
+			prev_val = db.hget(model._key, self.field)
 
-		if self.index or self.unique:
-			# Get previous index value.
-			if model.loaded() and self.field in model._data:
-				prev_val = model._data[self.field]
+			if PY3K and prev_val is not None:
+				prev_val = prev_val.decode('utf-8')
 
-			else:
-				prev_val = db.hget(model._key, self.field)
-
-				if PY3K and prev_val is not None:
-					prev_val = prev_val.decode('utf-8')
-
-			key = index_key(model.prefix(), self.field, prev_val)
-			pipe.srem(key, model._id)
+		key = index_key(model.prefix(), self.field, prev_val)
+		pipe.srem(key, model._id)
 
 
 def index_key (prefix, name, value):
@@ -410,7 +404,8 @@ class Model (BaseModel):
 		_pipe = self.pipe(pipe)
 
 		for field in self._name2field.values():
-			field.pre_delete(self, _pipe)
+			if field.index or field.unique:
+				field.del_index(self, _pipe)
 
 		super(Model, self).delete(_pipe)
 
@@ -420,10 +415,12 @@ class Model (BaseModel):
 	def save (self, pipe=None):
 		_pipe = self.pipe(pipe)
 		diff = self.diff()
-		fields = [f for f in self._name2field.values() if f.field in diff]
+
+		fields = [f for f in self._name2field.values() \
+			if f.field in diff and (f.index or f.unique)]
 
 		for field in fields:
-			field.pre_save(self, _pipe)
+			field.save_index(self, _pipe)
 
 		super(Model, self).save(_pipe)
 
