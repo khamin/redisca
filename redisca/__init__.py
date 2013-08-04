@@ -54,6 +54,9 @@ class Hash (Key):
 		self._diff = dict()
 		self._data = None
 
+	def __len__ (self):
+		return len(self.export())
+
 	def __getitem__ (self, name):
 		if name in self._diff:
 			return self._diff[name]
@@ -73,6 +76,13 @@ class Hash (Key):
 
 	def get (self, name, default=None):
 		return self[name] if name in self else default
+
+	def export (self):
+		self.load()
+		data = self._data
+		data.update(self._diff)
+
+		return dict([(k, v) for (k, v) in data.items() if v is not None])
 
 	def load (self):
 		""" Load data into hash if needed. """
@@ -220,20 +230,21 @@ class String (Field):
 		return val.decode('utf-8') if PY3K and type(val) is bytes else val
 
 	def __set__ (self, model, value):
-		value = str(value)
+		if value is not None:
+			value = str(value)
 
-		if self.minlen is not None and len(value) < self.minlen:
-			raise Exception('Minimal length check failed')
+			if self.minlen is not None and len(value) < self.minlen:
+				raise Exception('Minimal length check failed')
 
-		if self.maxlen is not None and len(value) > self.maxlen:
-			raise Exception('Maximum length check failed')
+			if self.maxlen is not None and len(value) > self.maxlen:
+				raise Exception('Maximum length check failed')
 
 		model[self.field] = value
 
 
 class Email (Field):
 	def __set__ (self, model, value):
-		if EMAIL_REGEXP.match(value) == None:
+		if value is not None and EMAIL_REGEXP.match(value) == None:
 			raise Exception('Email validation failed')
 
 		return super(Email, self).__set__(model, value)
@@ -254,13 +265,14 @@ class Integer (Field):
 		return self if model is None else int(model[self.field])
 
 	def __set__ (self, model, value):
-		value = int(value)
+		if value is not None:
+			value = int(value)
 
-		if self.minval is not None and value < self.minval:
-			raise Exception('Minimal value check failed')
+			if self.minval is not None and value < self.minval:
+				raise Exception('Minimal value check failed')
 
-		if self.maxval is not None and value > self.maxval:
-			raise Exception('Maximum value check failed')
+			if self.maxval is not None and value > self.maxval:
+				raise Exception('Maximum value check failed')
 
 		model[self.field] = value
 
@@ -273,22 +285,26 @@ class DateTime (Field):
 			datetime.fromtimestamp(int(model[self.field]))
 
 	def __set__ (self, model, value):
-		if type(value) is datetime:
-			value = value.strftime('%s')
+		if value is not None:
+			if type(value) is datetime:
+				value = value.strftime('%s')
 
-		model[self.field] = int(value)
+			value = int(value)
+
+		model[self.field] = value
 
 
 class MD5Pass (String):
 	def __set__ (self, model, value):
 		super(MD5Pass, self).__set__(model, value)
 
-		val = model[self.field]
+		if value is not None:
+			val = model[self.field]
 
-		if PY3K:
-			val = val.encode('utf-8')
+			if PY3K:
+				val = val.encode('utf-8')
 
-		model[self.field] = md5(val).hexdigest()
+			model[self.field] = md5(val).hexdigest()
 
 
 class Reference (Field):
@@ -302,8 +318,12 @@ class Reference (Field):
 		return self if model is None else self._cls(model[self.field])
 
 	def __set__ (self, model, parent):
-		assert parent.__class__ is self._cls
-		model[self.field] = parent._id
+		if parent is not None:
+			assert parent.__class__ is self._cls
+			model[self.field] = parent._id
+
+		else:
+			model[self.field] = None
 
 
 class Collection (set):

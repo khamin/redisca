@@ -275,3 +275,11 @@ class ModelTestCase (TestCase):
 
 		with self.assertRaises(Exception):
 			user.name = '1234567890_'
+
+	def test_export (self):
+		user = User(1)
+		user.name = 'foobar'
+		self.assertEqual(user.export(), {'name': 'foobar'})
+
+		user.name = None
+		self.assertEqual(user.export(), dict())
