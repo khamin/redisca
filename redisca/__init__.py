@@ -197,10 +197,8 @@ class Field (object):
 				if PY3K and prev_val is not None:
 					prev_val = prev_val.decode('utf-8')
 
-			if prev_val is not None: # Remove previous value index.
-				prev_key = index_key(model.prefix(), self.field, prev_val)
-				pipe.srem(prev_key, model._id)
-
+			prev_key = index_key(model.prefix(), self.field, prev_val)
+			pipe.srem(prev_key, model._id)
 			pipe.sadd(key, model._id)
 
 	def pre_delete (self, model, pipe=None):

@@ -201,6 +201,19 @@ class ModelTestCase (TestCase):
 		user.email = 'foo@bar.com'
 
 		self.assertRaises(Exception, user.save)
+		user = User(1)
+		user.email = None
+
+		self.assertTrue(user.email is None)
+		self.assertTrue(user['eml'] is None)
+		user.save()
+
+		self.assertTrue(user.email is None)
+		self.assertTrue(user['eml'] is None)
+
+		self.assertFalse(redis.scard('u:eml:foo@bar.com'), 0)
+		self.assertTrue(redis.exists('u:eml:None'))
+		user.save()
 
 	def test_email (self):
 		user = User(1)
