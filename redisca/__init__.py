@@ -104,6 +104,9 @@ class Hash (Key):
 
 		self._data = dict()
 
+		if self._exists is False:
+			return
+
 		for k, v in db.hgetall(self._key).items():
 			if PY3K:
 				k = k.decode(encoding='UTF-8')
