@@ -179,6 +179,7 @@ class ModelTestCase (TestCase):
 
 		# Check references
 		self.assertEqual(User.name.find('John Smith'), [User(1)])
+		self.assertEqual(User.name.choose('John Smith'), [User(1)])
 
 		self.assertFalse(user.loaded())
 		self.assertEqual(user['lang'], '1')

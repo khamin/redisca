@@ -169,9 +169,15 @@ class Field (object):
 
 	def find (self, val):
 		assert self.index or self.unique
-
 		key = index_key(self.owner.prefix(), self.field, val)
 		return [self.owner(model_id) for model_id in db.smembers(key)]
+
+	def choose (self, val, count=1):
+		""" Return *count* random model(s) from find() result. """
+
+		assert self.index or self.unique
+		key = index_key(self.owner.prefix(), self.field, val)
+		return [self.owner(model_id) for model_id in db.srandmember(key, count)]
 
 	def save_index (self, model, pipe=None):
 		key = index_key(model.prefix(), self.field, model[self.field])
