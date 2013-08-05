@@ -313,3 +313,7 @@ class ModelTestCase (TestCase):
 
 		user.name = None
 		self.assertEqual(user.export(), dict())
+
+	def test_get (self):
+		user = User(1)
+		self.assertEqual(user.get('somekey'), None)

@@ -57,6 +57,13 @@ class Hash (Key):
 	def __len__ (self):
 		return len(self.export())
 
+	def __contains__ (self, name):
+		if name in self._diff:
+			return True
+
+		self.load()
+		return name in self._data
+
 	def __getitem__ (self, name):
 		if name in self._diff:
 			return self._diff[name]
