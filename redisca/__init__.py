@@ -348,10 +348,6 @@ class Collection (set):
 class MetaModel (type):
 	def __new__ (mcs, name, bases, dct):
 		cls = super(MetaModel, mcs).__new__(mcs, name, bases, dct)
-
-		cls._name2field = dict([(n, f) for (n, f) in cls.__dict__.items() \
-			if isinstance(f, Field)]) # field name -> field object
-
 		cls._objects = dict() # id -> model objects registry.
 		return cls
 
@@ -393,10 +389,15 @@ class Model (BaseModel):
 		self._id = model_id
 		super(Model, self).__init__(self.key())
 
+	def fields (self):
+		""" Return name -> field dict of registered fields. """
+		props = self.__class__.__dict__.items()
+		return dict([(k, v) for (k, v) in props if isinstance(v, Field)])
+
 	def delete (self, pipe=None):
 		_pipe = self.pipe(pipe)
 
-		for field in self._name2field.values():
+		for field in self.fields().values():
 			if field.index or field.unique:
 				field.del_index(self, _pipe)
 
@@ -409,7 +410,7 @@ class Model (BaseModel):
 		_pipe = self.pipe(pipe)
 		diff = self.diff()
 
-		fields = [f for f in self._name2field.values() \
+		fields = [f for f in self.fields().values() \
 			if f.field in diff and (f.index or f.unique)]
 
 		for field in fields:

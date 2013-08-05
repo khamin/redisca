@@ -21,10 +21,6 @@ redis = Redis()
 setdb(redis)
 
 
-class Language (Model):
-	pass
-
-
 @prefix('u')
 class User (Model):
 	email = Email(
@@ -54,11 +50,16 @@ class User (Model):
 		maxval=100,
 	)
 
-	lang = Reference(
-		Language,
-		field='lang',
-		index=True,
-	)
+
+class Language (Model):
+	pass
+
+
+User.lang = Reference(
+	Language,
+	field='lang',
+	index=True,
+)
 
 
 class ModelTestCase (TestCase):
