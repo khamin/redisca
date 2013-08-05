@@ -40,7 +40,7 @@ class Key (object):
 
 		_pipe.delete(self._key)
 
-		if pipe is None:
+		if pipe is None and len(_pipe):
 			_pipe.execute()
 
 	def pipe (self, pipe=None):
@@ -153,7 +153,7 @@ class Hash (Key):
 		self._exists = True
 		self._diff = dict()
 
-		if pipe is None:
+		if pipe is None and len(_pipe):
 			_pipe.execute()
 
 	def delete (self, pipe=None):
@@ -368,7 +368,8 @@ class Collection (set):
 		for model in self:
 			model.save(pipe)
 
-		pipe.execute()
+		if len(pipe):
+			pipe.execute()
 
 	def delete (self):
 		pipe = db.pipeline()
@@ -376,7 +377,8 @@ class Collection (set):
 		for model in self:
 			model.delete(pipe=pipe)
 
-		pipe.execute()
+		if len(pipe):
+			pipe.execute()
 
 
 class MetaModel (type):
@@ -437,7 +439,7 @@ class Model (BaseModel):
 
 		super(Model, self).delete(_pipe)
 
-		if pipe is None:
+		if pipe is None and len(_pipe):
 			_pipe.execute()
 
 	def save (self, pipe=None):
@@ -452,7 +454,7 @@ class Model (BaseModel):
 
 		super(Model, self).save(_pipe)
 
-		if pipe is None:
+		if pipe is None and len(_pipe):
 			_pipe.execute()
 
 	@classmethod
