@@ -150,6 +150,7 @@ class Hash (Key):
 			self._data.update(self._diff)
 
 		_pipe.hmset(self._key, self._diff)
+		self._exists = True
 		self._diff = dict()
 
 		if pipe is None:
