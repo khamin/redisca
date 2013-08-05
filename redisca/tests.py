@@ -62,6 +62,10 @@ User.lang = Reference(
 )
 
 
+class SubUser (User):
+	pass
+
+
 class ModelTestCase (TestCase):
 	def setUp (self):
 		redis.flushdb()
@@ -84,6 +88,9 @@ class ModelTestCase (TestCase):
 		self.assertTrue(User(2)._id in User._objects)
 		self.assertTrue(Language(1)._id in Language._objects)
 		self.assertTrue(Language(2)._id in Language._objects)
+
+		self.assertFalse(User(1)._id in SubUser._objects)
+		self.assertFalse(User(2)._id in SubUser._objects)
 
 	def test_attrs (self):
 		user1 = User(1)
