@@ -165,6 +165,8 @@ class ModelTestCase (TestCase):
 		self.assertFalse(redis.exists('u:name:John Smith'))
 
 	def test_reference (self):
+		self.assertEqual(User.name.choice('John Smith'), None)
+
 		user = User(1)
 		user.name = 'John Smith'
 
@@ -179,7 +181,7 @@ class ModelTestCase (TestCase):
 
 		# Check references
 		self.assertEqual(User.name.find('John Smith'), [User(1)])
-		self.assertEqual(User.name.choose('John Smith'), [User(1)])
+		self.assertEqual(User.name.choice('John Smith'), [User(1)])
 
 		self.assertFalse(user.loaded())
 		self.assertEqual(user['lang'], '1')
