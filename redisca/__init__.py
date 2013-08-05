@@ -338,6 +338,12 @@ class Reference (Field):
 
 		return super(Reference, self).find(val)
 
+	def choice (self, val):
+		if isinstance(val, Model):
+			val = val._id
+
+		return super(Reference, self).choice(val)
+
 
 class Collection (set):
 	def save (self):
