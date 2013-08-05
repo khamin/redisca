@@ -84,6 +84,11 @@ class Hash (Key):
 	def get (self, name, default=None):
 		return self[name] if name in self else default
 
+	def pop (self, name, default=None):
+		val = self.get(name, default)
+		del self[name]
+		return val
+
 	def export (self):
 		self.load()
 		data = self._data
