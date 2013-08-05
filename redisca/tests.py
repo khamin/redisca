@@ -74,6 +74,10 @@ class ModelTestCase (TestCase):
 		User.free_all()
 		Language.free_all()
 
+	def test_db (self):
+		self.assertTrue(User.db() is redis)
+		self.assertTrue(Language.db() is redis)
+
 	def test_registry (self):
 		self.assertTrue(User(1) is User(1))
 		self.assertTrue(User(1) is not User(2))

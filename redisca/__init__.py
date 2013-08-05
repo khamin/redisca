@@ -455,3 +455,7 @@ class Model (BaseModel):
 	def free_all (cls):
 		""" Cleanup models registry. """
 		cls._objects = dict()
+
+	@classmethod
+	def db (self):
+		return db
