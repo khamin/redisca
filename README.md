@@ -108,6 +108,17 @@ Note that you still able to define own class variables without any limitations.
 
 Due to performance and transactional reasons Redis.pipeline's are used internally when it possible. You still able to control it by passing custom pipes to save() and delete() methods.
 
+# Flask Support
+
+Flask is amazing! That's why FlaskRedisca was implemented. Integration with your flask applications is very simple:
+
+	from redisca import FlaskRedisca
+	
+	app = Flask()
+	FlaskRedisca(app) # or FlaskRedisca().init_app(app)
+
+Setting up is simple too. Just put kwargs dict of *redis.StrictRedis* constructor parameters into _REDISCA_ config key.
+
 # Python 3.x support
 
 Py3k support is still a sort of experiment but I'm looking carefuly into full compability with cutting-edge builds of CPython. There are no known issues with it actually.
