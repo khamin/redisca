@@ -43,7 +43,8 @@ class Key (object):
 		if pipe is None and len(_pipe):
 			_pipe.execute()
 
-	def pipe (self, pipe=None):
+	@staticmethod
+	def pipe (pipe=None):
 		return db.pipeline(transaction=True) if pipe is None else pipe
 
 
@@ -453,6 +454,22 @@ class Model (BaseModel):
 			field.save_index(self, _pipe)
 
 		super(Model, self).save(_pipe)
+
+		if pipe is None and len(_pipe):
+			_pipe.execute()
+
+	@classmethod
+	def save_all (cls, pipe=None):
+		""" Save all known models. Deleted models ignored by empty diff. """
+
+		_pipe = cls.pipe(pipe)
+
+		if cls is not Model:
+			for model in cls._objects.values():
+				model.save(_pipe)
+
+		for child in cls.__subclasses__():
+			child.save_all(_pipe)
 
 		if pipe is None and len(_pipe):
 			_pipe.execute()

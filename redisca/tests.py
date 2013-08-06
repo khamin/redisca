@@ -52,7 +52,9 @@ class User (Model):
 
 
 class Language (Model):
-	pass
+	name = String(
+		field='name'
+	)
 
 
 User.lang = Reference(
@@ -317,3 +319,19 @@ class ModelTestCase (TestCase):
 	def test_get (self):
 		user = User(1)
 		self.assertEqual(user.get('somekey'), None)
+
+	def test_save_all (self):
+		user = User(1)
+		user.email = 'foo@bar.com'
+
+		user.lang = Language(1)
+		user.lang.name = 'English'
+
+		self.assertFalse(redis.exists('u:1'))
+		self.assertFalse(redis.exists('language:1'))
+
+		Model.save_all()
+
+		self.assertTrue(redis.exists('u:1'))
+		self.assertTrue(redis.exists('language:1'))
+		self.assertTrue(redis.exists('u:lang:1'))
