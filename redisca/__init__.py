@@ -211,8 +211,11 @@ class Field (object):
 			if len(ids):
 				raise Exception('Duplicate key error')
 
-		pipe.srem(self._prev_idx_key(model), model._id)
-		pipe.sadd(key, model._id)
+		prev_idx_key = self._prev_idx_key(model)
+
+		if prev_idx_key != key:
+			pipe.srem(prev_idx_key, model._id)
+			pipe.sadd(key, model._id)
 
 	def del_index (self, model, pipe=None):
 		# Get previous index value.
