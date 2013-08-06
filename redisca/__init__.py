@@ -343,7 +343,12 @@ class Reference (Field):
 
 	def __get__ (self, model, owner):
 		self.owner = owner
-		return self if model is None else self._cls(model[self.field])
+
+		if model is None:
+			return self
+
+		model_id = model[self.field]
+		return None if model_id is None else self._cls(model_id)
 
 	def __set__ (self, model, parent):
 		if parent is not None:
