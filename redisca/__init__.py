@@ -5,6 +5,7 @@ import re
 from hashlib import md5
 from sys import version_info
 from datetime import datetime
+from redis import StrictRedis
 
 
 PY3K = version_info[0] == 3
@@ -498,3 +499,23 @@ class Model (BaseModel):
 	@classmethod
 	def db (self):
 		return db
+
+
+class FlaskRedisca (object):
+	def __init__ (self, app=None):
+		if app is not None:
+			self.init_app(app)
+
+	def init_app (self, app):
+		self.app = app
+
+		setdb(StrictRedis(**self.app.config['REDISCA']))
+		self.app.before_request(self.before_request)
+		self.app.teardown_request(self.after_request)
+
+	def before_request (self):
+		pass
+
+	def after_request (self, exc):
+		Model.save_all()
+		Model.free_all()
