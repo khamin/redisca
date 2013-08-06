@@ -489,7 +489,11 @@ class Model (BaseModel):
 	@classmethod
 	def free_all (cls):
 		""" Cleanup models registry. """
+
 		cls._objects = dict()
+
+		for child in cls.__subclasses__():
+			child.free_all()
 
 	@classmethod
 	def db (self):
