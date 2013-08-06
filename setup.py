@@ -7,7 +7,7 @@ PACKAGES = find_packages()
 
 setup(
 	name = 'redisca',
-	version = '1.0a6',
+	version = '1.0b1',
 	packages = PACKAGES,
 	package_dir = {'': '.'},
 	test_suite = 'redisca.tests',
@@ -25,7 +25,7 @@ setup(
 
 	classifiers = (
 		'Operating System :: OS Independent',
-		'Development Status :: 3 - Alpha',
+		'Development Status :: 4 - Beta',
 		'Programming Language :: Python',
 		'Topic :: Database',
 	),
