@@ -206,7 +206,7 @@ class Field (object):
 		if self.unique:
 			model_id = bytes(model._id, 'utf-8') if PY3K else model._id
 			ids = db.smembers(key)
-			ids.discard(model._id)
+			ids.discard(model_id)
 
 			if len(ids):
 				raise Exception('Duplicate key error')
