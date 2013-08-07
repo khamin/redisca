@@ -93,7 +93,7 @@ class Hash (Key):
 
 	def export (self):
 		self.load()
-		data = self._data
+		data = self._data.copy()
 		data.update(self._diff)
 
 		return dict([(k, v) for (k, v) in data.items() if v is not None])
