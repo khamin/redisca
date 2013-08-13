@@ -445,7 +445,7 @@ class Model (BaseModel):
 
 	def __init__ (self, model_id):
 		self._id = model_id
-		key = ':'.join((self.getprefix(), self.getid()))
+		key = ':'.join((self.getprefix(), self._id))
 		super(Model, self).__init__(key)
 
 	@classmethod
@@ -513,7 +513,7 @@ class Model (BaseModel):
 			_pipe.execute()
 
 	def free (self):
-		del self.__class__._objects[self.getid()]
+		del self.__class__._objects[self._id]
 
 	@classmethod
 	def free_all (cls):
