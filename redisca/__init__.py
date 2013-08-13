@@ -447,6 +447,9 @@ class Model (BaseModel):
 		self._id = model_id
 		super(Model, self).__init__(self.key())
 
+	def getid (self):
+		return self._id
+
 	def fields (self):
 		""" Return name -> field dict of registered fields. """
 		props = self.__class__.__dict__.items()
@@ -502,10 +505,10 @@ class Model (BaseModel):
 				else cls.__name__.lower()
 
 	def key (self):
-		return ':'.join((self.prefix(), self._id))
+		return ':'.join((self.prefix(), self.getid()))
 
 	def free (self):
-		del self.__class__._objects[self._id]
+		del self.__class__._objects[self.getid()]
 
 	@classmethod
 	def free_all (cls):

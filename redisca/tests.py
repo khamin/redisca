@@ -92,13 +92,13 @@ class ModelTestCase (TestCase):
 		self.assertTrue(Language(1) is not User(1))
 		self.assertTrue(User(1) is not Language(2))
 
-		self.assertTrue(User(1)._id in User._objects)
-		self.assertTrue(User(2)._id in User._objects)
-		self.assertTrue(Language(1)._id in Language._objects)
-		self.assertTrue(Language(2)._id in Language._objects)
+		self.assertTrue(User(1).getid() in User._objects)
+		self.assertTrue(User(2).getid() in User._objects)
+		self.assertTrue(Language(1).getid() in Language._objects)
+		self.assertTrue(Language(2).getid() in Language._objects)
 
-		self.assertFalse(User(1)._id in SubUser._objects)
-		self.assertFalse(User(2)._id in SubUser._objects)
+		self.assertFalse(User(1).getid() in SubUser._objects)
+		self.assertFalse(User(2).getid() in SubUser._objects)
 
 	def test_attrs (self):
 		user1 = User(1)
