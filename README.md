@@ -47,9 +47,12 @@ Model is a simple extension of *Hash* that brings some powerful features into th
 	User.email.find('foo@bar.com') # Find models by indexed field. Return [user]
 	user.delete() # Delete routines here.
 
+Little explanation here:
+
 ## Key prefix
 
-Model key format is %ModelKeyPrefix%:%ModelId%. Lower-cased class name will be used as prefix by default but you can use *prefix* class decorator to override this behavior like this:
+Model key format is "model_key_prefix:model_id".
+Lowercased class name is default prefix but you can use *prefix* class decorator to override this behavior as shown in example above. Model key is available for reading:
 
 	print(user._key) # Will produce usr:1
 
@@ -129,6 +132,9 @@ Integration with your flask apps is very simple:
 	}
 	
 	FlaskRedisca(app)
+
+This extension will save all known models at the end of request and completely cleanup registry.
+Unchanged and deleted instances are untachable. If you want to skip locally changed instances use free() method during request life.
 
 # Python 3.x support
 
