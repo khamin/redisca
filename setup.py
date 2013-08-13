@@ -7,7 +7,7 @@ PACKAGES = find_packages()
 
 setup(
 	name = 'redisca',
-	version = '1.0b1',
+	version = '1.0b2',
 	packages = PACKAGES,
 	package_dir = {'': '.'},
 	test_suite = 'redisca.tests',
