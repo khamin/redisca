@@ -15,7 +15,7 @@ setup(
 	author_email = 'vitaliykhamin@gmail.com',
 	maintainer = 'Vitaliy Khamin',
 	maintainer_email = 'vitaliykhamin@gmail.com',
-	description = 'Redis Class Abstraction',
+	description = 'Lightweight ORM for Redis',
 	url = 'http://github.com/khamin/redisca',
 	zip_safe = True,
 
