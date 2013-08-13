@@ -79,8 +79,8 @@ class ModelTestCase (TestCase):
 		Language.free_all()
 
 	def test_db (self):
-		self.assertTrue(User.db() is redis)
-		self.assertTrue(Language.db() is redis)
+		self.assertTrue(User.getdb() is redis)
+		self.assertTrue(Language.getdb() is redis)
 
 	def test_registry (self):
 		self.assertTrue(User(1) is User(1))
@@ -106,39 +106,39 @@ class ModelTestCase (TestCase):
 
 		self.assertFalse(user1.loaded())
 		self.assertFalse(user2.loaded())
-		self.assertEqual(user1.diff(), dict())
-		self.assertEqual(user2.diff(), dict())
-		self.assertTrue(user1.diff() is not user2.diff())
+		self.assertEqual(user1.getdiff(), dict())
+		self.assertEqual(user2.getdiff(), dict())
+		self.assertTrue(user1.getdiff() is not user2.getdiff())
 
 		self.assertEqual(user1['name'], None)
 		self.assertTrue(user1.loaded())
 		self.assertFalse(user2.loaded())
-		self.assertEqual(user1.diff(), dict())
-		self.assertEqual(user2.diff(), dict())
+		self.assertEqual(user1.getdiff(), dict())
+		self.assertEqual(user2.getdiff(), dict())
 
 		self.assertEqual(user2['name'], None)
 		self.assertTrue(user1.loaded())
 		self.assertTrue(user2.loaded())
-		self.assertEqual(user1.diff(), dict())
-		self.assertEqual(user2.diff(), dict())
+		self.assertEqual(user1.getdiff(), dict())
+		self.assertEqual(user2.getdiff(), dict())
 
 		user1['name'] = 'John Smith'
 
 		self.assertEqual(user1['name'], 'John Smith')
 		self.assertEqual(user2['name'], None)
-		self.assertEqual(user1.diff(), {'name': 'John Smith'})
-		self.assertEqual(user2.diff(), dict())
+		self.assertEqual(user1.getdiff(), {'name': 'John Smith'})
+		self.assertEqual(user2.getdiff(), dict())
 
 		user2['name'] = 'Sarah Smith'
 
 		self.assertEqual(user1['name'], 'John Smith')
 		self.assertEqual(user2['name'], 'Sarah Smith')
-		self.assertEqual(user1.diff(), {'name': 'John Smith'})
-		self.assertEqual(user2.diff(), {'name': 'Sarah Smith'})
+		self.assertEqual(user1.getdiff(), {'name': 'John Smith'})
+		self.assertEqual(user2.getdiff(), {'name': 'Sarah Smith'})
 
 		user1.unload()
 		self.assertFalse(user1.loaded())
-		self.assertEqual(user1.diff(), {'name': 'John Smith'})
+		self.assertEqual(user1.getdiff(), {'name': 'John Smith'})
 		self.assertEqual(user1['name'], 'John Smith')
 		self.assertFalse(user1.loaded())
 
@@ -153,7 +153,7 @@ class ModelTestCase (TestCase):
 
 		user.save()
 		self.assertFalse(user.loaded())
-		self.assertEqual(user.diff(), dict())
+		self.assertEqual(user.getdiff(), dict())
 		self.assertTrue(redis.exists('u:1'))
 		self.assertEqual(redis.hgetall('u:1'), {b'name': b'John Smith'})
 		self.assertTrue(redis.exists('u:name:John Smith'))
@@ -167,7 +167,7 @@ class ModelTestCase (TestCase):
 
 		user.delete()
 		self.assertTrue(user.loaded())
-		self.assertEqual(user.diff(), dict())
+		self.assertEqual(user.getdiff(), dict())
 
 		self.assertFalse(redis.exists('u:1'))
 		self.assertFalse(redis.exists('u:name:John Smith'))

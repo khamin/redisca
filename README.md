@@ -54,7 +54,7 @@ Little explanation here:
 Model key format is "model_key_prefix:model_id".
 Lowercased class name is default prefix but you can use *prefix* class decorator to override this behavior as shown in example above. Model key is available for reading:
 
-	print(user._key) # Will produce usr:1
+	print(user.getkey()) # Will produce usr:1
 
 ## Fields
 

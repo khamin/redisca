@@ -138,7 +138,7 @@ class Hash (Key):
 		""" Unload model data. """
 		self._data = None
 
-	def diff (self):
+	def getdiff (self):
 		return self._diff
 
 	def save (self, pipe=None):
@@ -199,21 +199,21 @@ class Field (object):
 
 	def find (self, val):
 		assert self.index or self.unique
-		key = index_key(self.owner.prefix(), self.field, val)
+		key = index_key(self.owner.getprefix(), self.field, val)
 		return [self.owner(model_id) for model_id in db.smembers(key)]
 
 	def choice (self, val, count=1):
 		""" Return *count* random model(s) from find() result. """
 
 		assert self.index or self.unique
-		key = index_key(self.owner.prefix(), self.field, val)
+		key = index_key(self.owner.getprefix(), self.field, val)
 		ids = db.srandmember(key, count)
 
 		return None if not len(ids) else \
 			[self.owner(model_id) for model_id in ids]
 
 	def save_index (self, model, pipe=None):
-		key = index_key(model.prefix(), self.field, model[self.field])
+		key = index_key(model.getprefix(), self.field, model[self.field])
 
 		if self.unique:
 			model_id = bytes(model._id, 'utf-8') if PY3K else model._id
@@ -240,12 +240,12 @@ class Field (object):
 			prev_val = model._data[self.field]
 
 		else:
-			prev_val = db.hget(model._key, self.field)
+			prev_val = db.hget(model.getkey(), self.field)
 
 			if PY3K and prev_val is not None:
 				prev_val = prev_val.decode('utf-8')
 
-		return index_key(model.prefix(), self.field, prev_val)
+		return index_key(model.getprefix(), self.field, prev_val)
 
 
 def index_key (prefix, name, value):
@@ -445,20 +445,34 @@ class Model (BaseModel):
 
 	def __init__ (self, model_id):
 		self._id = model_id
-		super(Model, self).__init__(self.key())
+		key = ':'.join((self.getprefix(), self.getid()))
+		super(Model, self).__init__(key)
 
-	def getid (self):
-		return self._id
+	@classmethod
+	def getdb (self):
+		return db
 
-	def fields (self):
+	def getfields (self):
 		""" Return name -> field dict of registered fields. """
 		props = self.__class__.__dict__.items()
 		return dict([(k, v) for (k, v) in props if isinstance(v, Field)])
 
+	def getid (self):
+		return self._id
+
+	def getkey (self):
+		return self._key
+
+	@classmethod
+	def getprefix (cls):
+		return Model._cls2prefix[cls] \
+			if cls in Model._cls2prefix \
+				else cls.__name__.lower()
+
 	def delete (self, pipe=None):
 		_pipe = self.pipe(pipe)
 
-		for field in self.fields().values():
+		for field in self.getfields().values():
 			if field.index or field.unique:
 				field.del_index(self, _pipe)
 
@@ -469,9 +483,9 @@ class Model (BaseModel):
 
 	def save (self, pipe=None):
 		_pipe = self.pipe(pipe)
-		diff = self.diff()
+		diff = self.getdiff()
 
-		fields = [f for f in self.fields().values() \
+		fields = [f for f in self.getfields().values() \
 			if f.field in diff and (f.index or f.unique)]
 
 		for field in fields:
@@ -498,15 +512,6 @@ class Model (BaseModel):
 		if pipe is None and len(_pipe):
 			_pipe.execute()
 
-	@classmethod
-	def prefix (cls):
-		return Model._cls2prefix[cls] \
-			if cls in Model._cls2prefix \
-				else cls.__name__.lower()
-
-	def key (self):
-		return ':'.join((self.prefix(), self.getid()))
-
 	def free (self):
 		del self.__class__._objects[self.getid()]
 
@@ -518,10 +523,6 @@ class Model (BaseModel):
 
 		for child in cls.__subclasses__():
 			child.free_all()
-
-	@classmethod
-	def db (self):
-		return db
 
 
 class FlaskRedisca (object):
