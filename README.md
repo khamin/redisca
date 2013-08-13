@@ -1,35 +1,81 @@
-# Hashes
+# Hash
+
+Hashes are simple:
+
+	from redisca import setdb
+	from redisca import Hash
+	
+	from redis import Redis
+	setdb(Redis())
+	
+	myhash = Hash('hashkey')
+	myhash['foo'] = 'bar'
+	print(myhash['foo']) # Produces 'bar'
+	
+	myhash.save() # Save hash.
+	myhash.delete() # Delete hash.
 
 # Model
 
-## Introduction.
-
-Model is a simple extension of *Hash* that brings Fields into the game. You can define custom fields with some useful options and interact with hashes in OOP-manner.
+Model is a simple extension of *Hash* that brings some powerful features into the game. Let's see how it works:
 
 	from redisca import Model
 	from redisca import Email
+	from redisca import prefix
+	from redisca import setdb
 	
+	from redis import Redis
+	setdb(Redis())
+	
+	@prefix('usr')
 	class User (Model):
 		email = Email(
-			field='eml',
-			index=True,
-			unique=True,
+			field='eml', # define link with 'eml' hash key.
+			index=True,  # enables index support.
+			unique=True, # makes sure that field is unique across db.
 		)
 	
-	user = User(1)
-	user.email = 'foo@bar.com' # Will validate given email
+		... # Define class variables without any limitations.
+	
+	user = User(1) # Init model with id '1'
+	user.email = 'foo@bar.com' # Set email using field
 	
 	print(user.email)  # Will output 'foo@bar.com'
 	print(user['eml']) # Dict-style is available too
 	
 	user.save() # Saving routines here.
+	User.email.find('foo@bar.com') # Find models by indexed field. Return [user]
 	user.delete() # Delete routines here.
 
-As you can see Email field definition has some interesting options:
+## Key prefix
 
-* *field='eml'* defines that field linked to 'eml' hash key.
-* *index=True* enables index support for that hash key (look at Fields.indexes section for more information).
-* *unique=True* makes sure that User.email is unique across database.
+Model key format is %ModelKeyPrefix%:%ModelId%. Lower-cased class name will be used as prefix by default but you can use *prefix* class decorator to override this behavior like this:
+
+	print(user._key) # Will produce usr:1
+
+## Fields
+
+Field is the way how you should take control on data in your models. Just define class variables with field-specific options and take classic ORM's advantages:
+
+* data validation;
+* native python data types support;
+* transparent relations between models;
+* indexes support (incl. unique indexes).
+
+Available parameters:
+
+* field - hash field which is used as value storage.
+* index - makes field searchable.
+* unique - tells that value should be unique across database. Model.save() will raise an Exception if model of same class already exists with given value.
+
+Built-in fields:
+
+* *String* - extends *Field* with additional parameters *minlen* and *maxlen*.
+* *Email* - extends *String* field with email validation support.
+* *Integer* - extends *Field* with parameters *minval* and *maxval*. Accepts int and numeric strings. Returns int.
+* *Reference* - extends *Field* with *cls* (reference class) parameter. Accepts and returns instance of *cls*.
+* *MD5Pass* - extends *String* field. Acts like string but converts given string to md5 sum.
+* *DateTime* - extends *Field* without additional parameters. Accepts datetime and int(timestamp) values. Returns datetime.
 
 ## Registry
 
@@ -39,55 +85,11 @@ Each initialized model is saved in registry and returned on each attempt of re-i
 	user2 = User(1)
 	user1 is user2 # Always is True
 
-## Configuration
+It is possbile to cleanup registry:
 
-### Connection handler
-
-First step of using *redisca* is setting global connection handler up:
-
-	from redisca import setdb
-	from redis import Redis
-	setdb(Redis())
-
-### Key prefix
-
-Model key format is %ModelKeyPrefix%:%ModelId%. Lower-cased class name will be used as prefix by default, but you can use *prefix* class decorator to override this behavior like this:
-
-	from redisca import Model
-	from redisca import prefix
-
-	@prefix('myprefix')
-	class MyModel (Model):
-		pass
-	
-	mymodel = MyModel('foo')
-	print(mymodel._key) # Will produce myprefix:foo.
-
-# Fields
-
-Field is the way how you should take control on data in your models. Just define class variables with field-specific options and take classic ORM's advantages:
-
-* data validation;
-* native python data types support;
-* transparent relations between models;
-* indexes support (incl. unique indexes).
-
-Note that you still able to define own class variables without any limitations.
-
-
-## Email field
-
-## Reference field
-
-## Field index
-
-## Unique fields
-
-## Writing custom fields
-
-### Field callbacks
-
-# Collections
+	user.free()      # Unregister model instance.
+	User.free_all()  # Cleanup User's registry.
+	Model.free_all() # Cleanup registry completely.
 
 # Performance
 
@@ -106,18 +108,27 @@ Note that you still able to define own class variables without any limitations.
 
 ## Using Pipelines
 
-Due to performance and transactional reasons Redis.pipeline's are used internally when it possible. You still able to control it by passing custom pipes to save() and delete() methods.
+Due to performance and transactional reasons Redis.pipeline's are used internally when it possible. You still able to control it by passing custom pipes to save() and delete() methods. Group operations availble as well:
+
+	User.save_all() # Save all registered models of class User.
+	User.delete_all() # Delete all registered models of class User.
+	
+	Model.save_all() # Save all registered models.
+	Model.delete_all() # Delete all registered models.
 
 # Flask Support
 
-Flask is amazing! That's why FlaskRedisca was implemented. Integration with your flask applications is very simple:
+Integration with your flask apps is very simple:
 
 	from redisca import FlaskRedisca
 	
 	app = Flask()
-	FlaskRedisca(app) # or FlaskRedisca().init_app(app)
-
-Setting up is simple too. Just put kwargs dict of *redis.StrictRedis* constructor parameters into _REDISCA_ config key.
+	
+	app.config['REDISCA'] = {
+		# redis.StrictRedis constructor kwargs dict.
+	}
+	
+	FlaskRedisca(app)
 
 # Python 3.x support
 
