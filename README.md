@@ -119,6 +119,19 @@ Due to performance and transactional reasons Redis.pipeline's are used internall
 	Model.save_all() # Save all registered models.
 	Model.delete_all() # Delete all registered models.
 
+# Pseudo-Unique Id Generator
+
+*Redisca* can help you with pseudo-unique id generation:
+
+	from redisca import hexid
+	from redisca import intid
+	
+	print(hexid()) # 59d369790
+	print(hexid()) # 59d3697bc
+	
+	print(intid()) # 24116751882
+	print(intid()) # 24116788848
+
 # Flask Support
 
 Integration with your flask apps is very simple:

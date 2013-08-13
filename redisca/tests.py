@@ -15,6 +15,8 @@ from redisca import DateTime
 from redisca import Reference
 from redisca import prefix
 from redisca import setdb
+from redisca import hexid
+from redisca import intid
 
 
 redis = Redis()
@@ -335,3 +337,9 @@ class ModelTestCase (TestCase):
 		self.assertTrue(redis.exists('u:1'))
 		self.assertTrue(redis.exists('language:1'))
 		self.assertTrue(redis.exists('u:lang:1'))
+
+	def test_hexid (self):
+		self.assertEqual(type(hexid()), str)
+
+	def test_intid (self):
+		self.assertEqual(type(intid()), int)

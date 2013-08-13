@@ -2,6 +2,8 @@
 
 import re
 
+from time import time
+from random import randint
 from hashlib import md5
 from sys import version_info
 from datetime import datetime
@@ -18,6 +20,16 @@ db = None
 def setdb (redis):
 	global db
 	db = redis
+
+
+def intid ():
+	""" Return pseudo-unique decimal id. """
+	return int((time() - 1374000000) * 100) * 100 + randint(0, 99)
+
+
+def hexid ():
+	""" Return pseudo-unique hexadecimal id. """
+	return '%x' % intid()
 
 
 class Key (object):
