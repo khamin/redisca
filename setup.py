@@ -20,17 +20,17 @@ setup(
 	zip_safe = True,
 
 	platforms = (
-		'any',
+		'any'
 	),
 
 	classifiers = (
 		'Operating System :: OS Independent',
 		'Development Status :: 4 - Beta',
 		'Programming Language :: Python',
-		'Topic :: Database',
+		'Topic :: Database'
 	),
 
 	install_requires = [
-		'redis',
-	],
+		'redis'
+	]
 )
