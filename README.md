@@ -2,48 +2,52 @@
 
 Hashes are simple:
 
-	from redisca import conf
-	from redisca import Hash
-	
-	from redis import Redis
-	conf.db = Redis()
-	
-	myhash = Hash('hashkey')
-	myhash['foo'] = 'bar'
-	print(myhash['foo']) # Produces 'bar'
-	
-	myhash.save() # Save hash.
-	myhash.delete() # Delete hash.
+```python
+from redisca import conf
+from redisca import Hash
+
+from redis import Redis
+conf.db = Redis()
+
+myhash = Hash('hashkey')
+myhash['foo'] = 'bar'
+print(myhash['foo']) # Produces 'bar'
+
+myhash.save() # Save hash.
+myhash.delete() # Delete hash.
+```
 
 # Model
 
 Model is a simple extension of *Hash* that brings some powerful features into the game. Let's see how it works:
 
-	from redisca import Model
-	from redisca import Email
-	from redisca import conf
-	from redis import Redis
-	conf.db = Redis()
-	
-	@conf(prefix='usr')
-	class User (Model):
-		email = Email(
-			field='eml', # define link with 'eml' hash key.
-			index=True,  # enables index support.
-			unique=True, # makes sure that field is unique across db.
-		)
-	
-		... # Define class variables without any limitations.
-	
-	user = User(1) # Init model with id '1'
-	user.email = 'foo@bar.com' # Set email using field
-	
-	print(user.email)  # Will output 'foo@bar.com'
-	print(user['eml']) # Dict-style is available too
-	
-	user.save() # Saving routines here.
-	User.email.find('foo@bar.com') # Find models by indexed field. Return [user]
-	user.delete() # Delete routines here.
+```python
+from redisca import Model
+from redisca import Email
+from redisca import conf
+from redis import Redis
+conf.db = Redis()
+
+@conf(prefix='usr')
+class User (Model):
+	email = Email(
+		field='eml', # define link with 'eml' hash key.
+		index=True,  # enables index support.
+		unique=True, # makes sure that field is unique across db.
+	)
+
+	# Define class variables without any limitations.
+
+user = User(1) # Init model with id '1'
+user.email = 'foo@bar.com' # Set email using field
+
+print(user.email)  # Will output 'foo@bar.com'
+print(user['eml']) # Dict-style is available too
+
+user.save() # Saving routines here.
+User.email.find('foo@bar.com') # Find models by indexed field. Return [user]
+user.delete() # Delete routines here.
+```
 
 Little explanation here:
 
@@ -51,38 +55,46 @@ Little explanation here:
 
 Global database connection is StrictRedis() by default. Setting custom connection looks like this:
 
-	from redisca import conf
-	from redis import Redis
-	
-	conf.db = Redis(...)
+```python
+from redisca import conf
+from redis import Redis
+
+conf.db = Redis(...)
+```
 
 Also you can setup **inheritable** per-model database connection using *conf* class decorator:
 
-	from redisca import Model
-	from redisca import conf
-	
-	from redis import Redis
-	
-	@conf(db=Redis())
-	class User (Model):
-		pass
+```python
+from redisca import Model
+from redisca import conf
+
+from redis import Redis
+
+@conf(db=Redis())
+class User (Model):
+	pass
+```
 
 ## Key prefix
 
 Model key format is "model_key_prefix:model_id".
 Lowercased class name is default prefix but you can use *conf* class decorator to override this behavior as shown in example:
 
-	from redisca import Model
-	from redisca import conf
-	
-	@conf(prefix='usr')
-	class User (Model):
-		pass
+```python
+from redisca import Model
+from redisca import conf
+
+@conf(prefix='usr')
+class User (Model):
+	pass
+```
 
 Prefix and key are available for reading:
 
-	print(User.getprefix()) # Will produce usr
-	print(user.getkey()) # Will produce usr:1
+```python
+print(User.getprefix()) # Will produce usr
+print(user.getkey()) # Will produce usr:1
+```
 
 ## Fields
 
@@ -112,15 +124,19 @@ Built-in fields:
 
 Each initialized model is saved in registry and returned on each attempt of re-init. Example below always return True:
 
-	user1 = User(1)
-	user2 = User(1)
-	user1 is user2 # Always is True
+```python
+user1 = User(1)
+user2 = User(1)
+user1 is user2 # Always is True
+```
 
 It is possbile to cleanup registry:
 
-	user.free()      # Unregister model instance.
-	User.free_all()  # Cleanup User's registry.
-	Model.free_all() # Cleanup registry completely.
+```python
+user.free()      # Unregister model instance.
+User.free_all()  # Cleanup User's registry.
+Model.free_all() # Cleanup registry completely.
+```
 
 # Performance
 
@@ -128,10 +144,12 @@ It is possbile to cleanup registry:
 
 *Redisca* uses lazy hash data loading technique. That means hash data is loaded exactly when it needed.
 
-	user = User(1)       # Nothing loaded here.
-	user['age'] = 26     # And here.
-	print(user['age'])   # Or even here.
-	print(user['email']) # But loaded here because it needed.
+```python
+user = User(1)       # Nothing loaded here.
+user['age'] = 26     # And here.
+print(user['age'])   # Or even here.
+print(user['email']) # But loaded here because it needed.
+```
 
 ## Diff-based Saving
 
@@ -141,35 +159,41 @@ It is possbile to cleanup registry:
 
 Due to performance and transactional reasons Redis.pipeline's are used internally when it possible. You still able to control it by passing custom pipes to save() and delete() methods. Group operations availble as well:
 
-	User.save_all()  # Save all registered models of class User.
-	Model.save_all() # Save all registered models.
+```python
+User.save_all()  # Save all registered models of class User.
+Model.save_all() # Save all registered models.
+```
 
 # Pseudo-Unique Id Generator
 
 *Redisca* can help you with pseudo-unique id generation:
 
-	from redisca import hexid
-	from redisca import intid
-	
-	print(hexid()) # 59d369790
-	print(hexid()) # 59d3697bc
-	
-	print(intid()) # 24116751882
-	print(intid()) # 24116788848
+```python
+from redisca import hexid
+from redisca import intid
+
+print(hexid()) # 59d369790
+print(hexid()) # 59d3697bc
+
+print(intid()) # 24116751882
+print(intid()) # 24116788848
+```
 
 # Flask Support
 
 Integration with your flask apps is very simple:
 
-	from redisca import FlaskRedisca
-	
-	app = Flask()
-	
-	app.config['REDISCA'] = {
-		# redis.StrictRedis constructor kwargs dict.
-	}
-	
-	FlaskRedisca(app)
+```python
+from redisca import FlaskRedisca
+
+app = Flask()
+
+app.config['REDISCA'] = {
+	# redis.StrictRedis constructor kwargs dict.
+}
+
+FlaskRedisca(app)
+```
 
 This extension will save all known models at the end of request and completely cleanup registry.
 Unchanged and deleted instances are untachable. If you want to skip locally changed instances use free() method during request life.
