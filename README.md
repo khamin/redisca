@@ -1,3 +1,15 @@
+# Installation
+
+Using PyPi (recommended):
+
+	sudo pip install redisca
+
+Using previously downloaded archive:
+
+	wget https://pypi.python.org/packages/source/r/redisca/redisca-X.tar.gz
+	tar xvf redisca-X.tar.gz
+	sudo python redisca-X/setup.py install
+
 # Key
 
 Key is simple class abstraction over redis keys.
