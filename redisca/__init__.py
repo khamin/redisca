@@ -540,7 +540,7 @@ class FlaskRedisca (object):
 	def init_app (self, app):
 		self.app = app
 
-		setdb(StrictRedis(**self.app.config['REDISCA']))
+		conf.db = StrictRedis(**self.app.config['REDISCA'])
 		self.app.before_request(self.before_request)
 		self.app.teardown_request(self.after_request)
 
