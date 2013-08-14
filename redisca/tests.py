@@ -13,17 +13,18 @@ from redisca import String
 from redisca import MD5Pass
 from redisca import DateTime
 from redisca import Reference
-from redisca import prefix
-from redisca import setdb
 from redisca import hexid
 from redisca import intid
+from redisca import conf
 
 
-redis = Redis()
-setdb(redis)
+redis0 = Redis(db=0)
+redis1 = Redis(db=1)
+
+conf.db = redis0
 
 
-@prefix('u')
+@conf(prefix='u')
 class User (Model):
 	email = Email(
 		field='eml',
@@ -53,6 +54,7 @@ class User (Model):
 	)
 
 
+@conf(db=redis1)
 class Language (Model):
 	name = String(
 		field='name'
@@ -70,17 +72,24 @@ class SubUser (User):
 	pass
 
 
+class SubLang (Language):
+	pass
+
+
 class ModelTestCase (TestCase):
 	def setUp (self):
-		redis.flushdb()
+		redis0.flushdb()
+		redis1.flushdb()
 
 	def tearDown (self):
 		User.free_all()
 		Language.free_all()
 
 	def test_db (self):
-		self.assertTrue(User.getdb() is redis)
-		self.assertTrue(Language.getdb() is redis)
+		self.assertTrue(User.getdb() is redis0)
+		self.assertTrue(SubUser.getdb() is redis0)
+		self.assertTrue(Language.getdb() is redis1)
+		self.assertTrue(SubLang.getdb() is redis1)
 
 	def test_registry (self):
 		self.assertTrue(User(1) is User(1))
@@ -154,23 +163,23 @@ class ModelTestCase (TestCase):
 		user.save()
 		self.assertFalse(user.loaded())
 		self.assertEqual(user.getdiff(), dict())
-		self.assertTrue(redis.exists('u:1'))
-		self.assertEqual(redis.hgetall('u:1'), {b'name': b'John Smith'})
-		self.assertTrue(redis.exists('u:name:John Smith'))
-		self.assertEqual(redis.smembers('u:name:John Smith'), set([b'1']))
+		self.assertTrue(redis0.exists('u:1'))
+		self.assertEqual(redis0.hgetall('u:1'), {b'name': b'John Smith'})
+		self.assertTrue(redis0.exists('u:name:John Smith'))
+		self.assertEqual(redis0.smembers('u:name:John Smith'), set([b'1']))
 
 		user.name = 'Steve Gobs'
 		user.save()
 
-		self.assertFalse(redis.exists('u:name:John Smith'))
-		self.assertEqual(redis.smembers('u:name:Steve Gobs'), set([b'1']))
+		self.assertFalse(redis0.exists('u:name:John Smith'))
+		self.assertEqual(redis0.smembers('u:name:Steve Gobs'), set([b'1']))
 
 		user.delete()
 		self.assertTrue(user.loaded())
 		self.assertEqual(user.getdiff(), dict())
 
-		self.assertFalse(redis.exists('u:1'))
-		self.assertFalse(redis.exists('u:name:John Smith'))
+		self.assertFalse(redis0.exists('u:1'))
+		self.assertFalse(redis0.exists('u:name:John Smith'))
 
 	def test_reference (self):
 		self.assertEqual(User.name.choice('John Smith'), None)
@@ -197,19 +206,19 @@ class ModelTestCase (TestCase):
 		self.assertEqual(User.lang.find(Language(1)), [User(1)])
 		self.assertTrue(user.loaded())
 
-		self.assertTrue(redis.exists('u:1'))
-		self.assertEqual(redis.hget('u:1', 'lang'), b'1')
-		self.assertFalse(redis.exists('language:1'))
+		self.assertTrue(redis0.exists('u:1'))
+		self.assertEqual(redis0.hget('u:1', 'lang'), b'1')
+		self.assertFalse(redis1.exists('language:1'))
 
 		Language(1).save()
 
-		self.assertTrue(redis.exists('language:1'))
+		self.assertTrue(redis1.exists('language:1'))
 
 		user.delete()
 		Language(1).delete()
 
-		self.assertFalse(redis.exists('u:1'))
-		self.assertFalse(redis.exists('language:1'))
+		self.assertFalse(redis0.exists('u:1'))
+		self.assertFalse(redis1.exists('language:1'))
 
 	def test_dupfield (self):
 		user = User(1)
@@ -230,8 +239,8 @@ class ModelTestCase (TestCase):
 		self.assertTrue(user.email is None)
 		self.assertTrue(user['eml'] is None)
 
-		self.assertFalse(redis.scard('u:eml:foo@bar.com'), 0)
-		self.assertTrue(redis.exists('u:eml:None'))
+		self.assertFalse(redis0.scard('u:eml:foo@bar.com'), 0)
+		self.assertTrue(redis0.exists('u:eml:None'))
 		user.save()
 
 	def test_email (self):
@@ -329,14 +338,14 @@ class ModelTestCase (TestCase):
 		user.lang = Language(1)
 		user.lang.name = 'English'
 
-		self.assertFalse(redis.exists('u:1'))
-		self.assertFalse(redis.exists('language:1'))
+		self.assertFalse(redis0.exists('u:1'))
+		self.assertFalse(redis1.exists('language:1'))
 
 		Model.save_all()
 
-		self.assertTrue(redis.exists('u:1'))
-		self.assertTrue(redis.exists('language:1'))
-		self.assertTrue(redis.exists('u:lang:1'))
+		self.assertTrue(redis0.exists('u:1'))
+		self.assertTrue(redis1.exists('language:1'))
+		self.assertTrue(redis0.exists('u:lang:1'))
 
 	def test_hexid (self):
 		self.assertEqual(type(hexid()), str)

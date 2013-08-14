@@ -14,19 +14,6 @@ PY3K = version_info[0] == 3
 EMAIL_REGEXP = re.compile(r"^[a-z0-9]+[_a-z0-9-]*(\.[_a-z0-9-]+)*@[a-z0-9]+[\.a-z0-9-]*(\.[a-z]{2,4})$")
 
 
-db = None
-
-
-def getdb ():
-	global db
-	return db
-
-
-def setdb (redis):
-	global db
-	db = redis
-
-
 def intid ():
 	""" Return pseudo-unique decimal id. """
 	return int((time() - 1374000000) * 100) * 100 + randint(0, 99)
@@ -41,7 +28,7 @@ class Key (object):
 	def __init__ (self, key, db=None):
 		self._key = key
 		self._exists = None
-		self._db = db or getdb()
+		self._db = db or conf.db
 
 	def exists (self):
 		""" Check if model key exists. """
@@ -413,7 +400,6 @@ class MetaModel (type):
 	def __new__ (mcs, name, bases, dct):
 		cls = super(MetaModel, mcs).__new__(mcs, name, bases, dct)
 		cls._objects = dict() # id -> model objects registry.
-		cls._db = getdb()
 		return cls
 
 	def __call__ (cls, model_id, *args, **kw):
@@ -430,14 +416,23 @@ class MetaModel (type):
 		return cls._objects[model_id]
 
 
-def prefix (val):
-	""" Model key prefix class decorator. """
+class conf (object):
+	""" Configuration storage and model decorator. """
 
-	def f (cls):
-		Model._cls2prefix[cls] = val
+	db = StrictRedis()
+
+	def __init__ (self, prefix=None, db=None):
+		self._prefix = prefix
+		self._db = db
+
+	def __call__ (self, cls):
+		if self._db is not None:
+			cls._db = self._db
+
+		if self._prefix is not None:
+			Model._cls2prefix[cls] = self._prefix
+
 		return cls
-
-	return f
 
 
 if PY3K:
@@ -453,11 +448,15 @@ class Model (BaseModel):
 	def __init__ (self, model_id):
 		self._id = model_id
 		key = ':'.join((self.getprefix(), self._id))
-		super(Model, self).__init__(key, self._db)
+		super(Model, self).__init__(key, self.getdb())
 
 	@classmethod
 	def getdb (cls):
-		return cls._db
+		try:
+			return cls._db
+		
+		except:
+			return conf.db
 
 	def getfields (self):
 		""" Return name -> field dict of registered fields. """
@@ -508,7 +507,8 @@ class Model (BaseModel):
 		""" Save all known models. Deleted models ignored by empty diff. """
 
 		if cls is not Model:
-			_pipe = cls._db.pipeline(transaction=True) if pipe is None else pipe
+			_pipe = cls.getdb().pipeline(transaction=True) \
+				if pipe is None else pipe
 
 			for model in cls._objects.values():
 				model.save(_pipe)

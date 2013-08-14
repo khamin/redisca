@@ -2,11 +2,11 @@
 
 Hashes are simple:
 
-	from redisca import setdb
+	from redisca import conf
 	from redisca import Hash
 	
 	from redis import Redis
-	setdb(Redis())
+	conf.db = Redis()
 	
 	myhash = Hash('hashkey')
 	myhash['foo'] = 'bar'
@@ -21,13 +21,11 @@ Model is a simple extension of *Hash* that brings some powerful features into th
 
 	from redisca import Model
 	from redisca import Email
-	from redisca import prefix
-	from redisca import setdb
-	
+	from redisca import conf
 	from redis import Redis
-	setdb(Redis())
+	conf.db = Redis()
 	
-	@prefix('usr')
+	@conf(prefix='usr')
 	class User (Model):
 		email = Email(
 			field='eml', # define link with 'eml' hash key.
@@ -49,11 +47,41 @@ Model is a simple extension of *Hash* that brings some powerful features into th
 
 Little explanation here:
 
+## Database Configuration
+
+Global database connection is StrictRedis() by default. Setting custom connection looks like this:
+
+	from redisca import conf
+	from redis import Redis
+	
+	conf.db = Redis(...)
+
+Also you can setup **inheritable** per-model database connection using *conf* class decorator:
+
+	from redisca import Model
+	from redisca import conf
+	
+	from redis import Redis
+	
+	@conf(db=Redis())
+	class User (Model):
+		pass
+
 ## Key prefix
 
 Model key format is "model_key_prefix:model_id".
-Lowercased class name is default prefix but you can use *prefix* class decorator to override this behavior as shown in example above. Model key is available for reading:
+Lowercased class name is default prefix but you can use *conf* class decorator to override this behavior as shown in example:
 
+	from redisca import Model
+	from redisca import conf
+	
+	@conf(prefix='usr')
+	class User (Model):
+		pass
+
+Prefix and key are available for reading:
+
+	print(User.getprefix()) # Will produce usr
 	print(user.getkey()) # Will produce usr:1
 
 ## Fields
@@ -113,11 +141,8 @@ It is possbile to cleanup registry:
 
 Due to performance and transactional reasons Redis.pipeline's are used internally when it possible. You still able to control it by passing custom pipes to save() and delete() methods. Group operations availble as well:
 
-	User.save_all() # Save all registered models of class User.
-	User.delete_all() # Delete all registered models of class User.
-	
+	User.save_all()  # Save all registered models of class User.
 	Model.save_all() # Save all registered models.
-	Model.delete_all() # Delete all registered models.
 
 # Pseudo-Unique Id Generator
 
