@@ -376,26 +376,6 @@ class Reference (Field):
 		return super(Reference, self).choice(val)
 
 
-class Collection (set):
-	def save (self):
-		pipe = db.pipeline()
-
-		for model in self:
-			model.save(pipe)
-
-		if len(pipe):
-			pipe.execute()
-
-	def delete (self):
-		pipe = db.pipeline()
-
-		for model in self:
-			model.delete(pipe=pipe)
-
-		if len(pipe):
-			pipe.execute()
-
-
 class MetaModel (type):
 	def __new__ (mcs, name, bases, dct):
 		cls = super(MetaModel, mcs).__new__(mcs, name, bases, dct)
