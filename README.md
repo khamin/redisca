@@ -1,6 +1,35 @@
+# Key
+
+Key is simple class abstraction over redis keys.
+It implements few useful methods:
+
+```python
+from redisca import Key
+
+mykey = Key('somekey') # Init key.
+mykey.exists() # Check if key exists.
+mykey.delete() # Delete key.
+```
+
+Default global database connection pointed to localhost:6397/0 but you can override it:
+
+```python
+from redis import Redis
+conf.db = Redis(...)
+```
+
+Custom key database connection setup available as well:
+
+```python
+from redisca import Key
+from redis import Redis
+
+mykey = Key('somekey', db=Redis())
+```
+
 # Hash
 
-Hashes are simple:
+Hash extends *Key* and implements dict-style access for key data:
 
 ```python
 from redisca import conf
@@ -19,7 +48,7 @@ myhash.delete() # Delete hash.
 
 # Model
 
-Model is a simple extension of *Hash* that brings some powerful features into the game. Let's see how it works:
+Model extends *Hash* and brings some powerful features into the game. Let's see how it works:
 
 ```python
 from redisca import Model
@@ -49,20 +78,9 @@ User.email.find('foo@bar.com') # Find models by indexed field. Return [user]
 user.delete() # Delete routines here.
 ```
 
-Little explanation here:
+## Per-Model Database Configuration
 
-## Database Configuration
-
-Global database connection is StrictRedis() by default. Setting custom connection looks like this:
-
-```python
-from redisca import conf
-from redis import Redis
-
-conf.db = Redis(...)
-```
-
-Also you can setup **inheritable** per-model database connection using *conf* class decorator:
+You can setup **inheritable** per-model database connection using *conf* class decorator:
 
 ```python
 from redisca import Model
