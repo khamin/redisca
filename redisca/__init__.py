@@ -181,7 +181,8 @@ class Hash (Key):
 
 
 class Field (object):
-	def __init__ (self, field, index=False, unique=False):
+	def __init__ (self, field, index=False, unique=False, new=None):
+		self.new = new
 		self.index = bool(index)
 		self.unique = bool(unique)
 		self.field = field
@@ -459,6 +460,25 @@ class Model (BaseModel):
 		return Model._cls2prefix[cls] \
 			if cls in Model._cls2prefix \
 				else cls.__name__.lower()
+
+	@classmethod
+	def new (cls, model_id=None):
+		""" Return new model with given id and field.new values.
+		If model id is None hexid() will be used instead.
+		Raise an Exception if model already exists. """
+
+		if model_id is None:
+			model_id = hexid()
+
+		model = cls(model_id)
+
+		if model.exists():
+			raise Exception('%s(%s) already exists' % (cls.__name__, model_id))
+
+		for name, field in cls.getfields().items():
+			setattr(model, name, field.new)
+
+		return model
 
 	def delete (self, pipe=None):
 		_pipe = self.getpipe(pipe)

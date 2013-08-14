@@ -72,22 +72,43 @@ conf.db = Redis()
 @conf(prefix='usr')
 class User (Model):
 	email = Email(
-		field='eml', # define link with 'eml' hash key.
-		index=True,  # enables index support.
-		unique=True, # makes sure that field is unique across db.
+		field='eml', # Define link with 'eml' hash key.
+		index=True,  # Enables index support.
+		unique=True, # Makes sure that field is unique across db.
 	)
 
-	# Define class variables without any limitations.
+	created = DateTime(
+		field='created',       # Define link with 'created' hash key.
+		new=datetime.utcnow(), # Value which is used as default in User.new()
+	)
+	
+	# Define own class variables without any limitations.
 
-user = User(1) # Init model with id '1'
+user = User.new() # Init model with random id.
 user.email = 'foo@bar.com' # Set email using field
 
-print(user.email)  # Will output 'foo@bar.com'
+print(user.email)  # Output 'foo@bar.com'
 print(user['eml']) # Dict-style is available too
 
-user.save() # Saving routines here.
-User.email.find('foo@bar.com') # Find models by indexed field. Return [user]
+print(user.created)    # Output result of datetime.utcnow()
+print(user['created']) # Output integer timestamp of datetime.utcnow()
+
+user.save()   # Saving routines here.
 user.delete() # Delete routines here.
+```
+
+Load model by id:
+
+```python
+user = User('your_id')
+```
+
+## Using Indexes.
+
+As shown above User.email index enabled. It helps to find models by field value:
+
+```python
+users = User.email.find('foo@bar.com') # List of matched models instances.
 ```
 
 ## Per-Model Database Configuration
@@ -140,6 +161,7 @@ Available parameters:
 * **field** - hash field which is used as value storage.
 * **index** - makes field searchable.
 * **unique** - tells that value should be unique across database. Model.save() will raise an Exception if model of same class already exists with given value.
+* **new** - field value which is used as default in Model.new()
 
 Built-in fields:
 

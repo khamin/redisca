@@ -18,6 +18,9 @@ from redisca import intid
 from redisca import conf
 
 
+NOW = datetime.fromtimestamp(int(time()))
+
+
 redis0 = Redis(db=0)
 redis1 = Redis(db=1)
 
@@ -45,6 +48,7 @@ class User (Model):
 
 	created = DateTime(
 		field='created',
+		new=NOW,
 	)
 
 	age = Integer(
@@ -177,6 +181,15 @@ class ModelTestCase (TestCase):
 		user.save()
 		self.assertEqual(user.getorigin(), sg)
 		self.assertEqual(user.getdiff(), dict())
+
+	def test_new (self):
+		user = User.new()
+
+		self.assertEqual(type(user.getid()), str)
+		self.assertTrue(len(user.getid()) > 0)
+
+		self.assertEqual(user.name, None)
+		self.assertEqual(user.created, NOW)
 
 	def test_save_delete (self):
 		user = User(1)
