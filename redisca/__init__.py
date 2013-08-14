@@ -17,6 +17,11 @@ EMAIL_REGEXP = re.compile(r"^[a-z0-9]+[_a-z0-9-]*(\.[_a-z0-9-]+)*@[a-z0-9]+[\.a-
 db = None
 
 
+def getdb ():
+	global db
+	return db
+
+
 def setdb (redis):
 	global db
 	db = redis
@@ -33,15 +38,16 @@ def hexid ():
 
 
 class Key (object):
-	def __init__ (self, key):
+	def __init__ (self, key, db=None):
 		self._key = key
 		self._exists = None
+		self._db = db or getdb()
 
 	def exists (self):
 		""" Check if model key exists. """
 
 		if self._exists is None:
-			self._exists = db.exists(self._key)
+			self._exists = self._db.exists(self._key)
 
 		return self._exists
 
@@ -56,14 +62,13 @@ class Key (object):
 		if pipe is None and len(_pipe):
 			_pipe.execute()
 
-	@staticmethod
-	def pipe (pipe=None):
-		return db.pipeline(transaction=True) if pipe is None else pipe
+	def pipe (self, pipe=None):
+		return self._db.pipeline(transaction=True) if pipe is None else pipe
 
 
 class Hash (Key):
-	def __init__ (self, key):
-		super(Hash, self).__init__(key)
+	def __init__ (self, key, db=None):
+		super(Hash, self).__init__(key, db)
 
 		self._diff = dict()
 		self._data = None
@@ -121,7 +126,7 @@ class Hash (Key):
 		if self._exists is False:
 			return
 
-		for k, v in db.hgetall(self._key).items():
+		for k, v in self._db.hgetall(self._key).items():
 			if PY3K:
 				k = k.decode(encoding='UTF-8')
 				v = v.decode(encoding='UTF-8')
@@ -200,14 +205,15 @@ class Field (object):
 	def find (self, val):
 		assert self.index or self.unique
 		key = index_key(self.owner.getprefix(), self.field, val)
-		return [self.owner(model_id) for model_id in db.smembers(key)]
+		ids = self.owner.getdb().smembers(key)
+		return [self.owner(model_id) for model_id in ids]
 
 	def choice (self, val, count=1):
 		""" Return *count* random model(s) from find() result. """
 
 		assert self.index or self.unique
 		key = index_key(self.owner.getprefix(), self.field, val)
-		ids = db.srandmember(key, count)
+		ids = self.owner.getdb().srandmember(key, count)
 
 		return None if not len(ids) else \
 			[self.owner(model_id) for model_id in ids]
@@ -217,7 +223,7 @@ class Field (object):
 
 		if self.unique:
 			model_id = bytes(model._id, 'utf-8') if PY3K else model._id
-			ids = db.smembers(key)
+			ids = model.getdb().smembers(key)
 			ids.discard(model_id)
 
 			if len(ids):
@@ -240,7 +246,7 @@ class Field (object):
 			prev_val = model._data[self.field]
 
 		else:
-			prev_val = db.hget(model.getkey(), self.field)
+			prev_val = model.getdb().hget(model.getkey(), self.field)
 
 			if PY3K and prev_val is not None:
 				prev_val = prev_val.decode('utf-8')
@@ -407,6 +413,7 @@ class MetaModel (type):
 	def __new__ (mcs, name, bases, dct):
 		cls = super(MetaModel, mcs).__new__(mcs, name, bases, dct)
 		cls._objects = dict() # id -> model objects registry.
+		cls._db = getdb()
 		return cls
 
 	def __call__ (cls, model_id, *args, **kw):
@@ -446,11 +453,11 @@ class Model (BaseModel):
 	def __init__ (self, model_id):
 		self._id = model_id
 		key = ':'.join((self.getprefix(), self._id))
-		super(Model, self).__init__(key)
+		super(Model, self).__init__(key, self._db)
 
 	@classmethod
-	def getdb (self):
-		return db
+	def getdb (cls):
+		return cls._db
 
 	def getfields (self):
 		""" Return name -> field dict of registered fields. """
@@ -500,17 +507,17 @@ class Model (BaseModel):
 	def save_all (cls, pipe=None):
 		""" Save all known models. Deleted models ignored by empty diff. """
 
-		_pipe = cls.pipe(pipe)
-
 		if cls is not Model:
+			_pipe = cls._db.pipeline(transaction=True) if pipe is None else pipe
+
 			for model in cls._objects.values():
 				model.save(_pipe)
 
-		for child in cls.__subclasses__():
-			child.save_all(_pipe)
+			if pipe is None and len(_pipe):
+				_pipe.execute()
 
-		if pipe is None and len(_pipe):
-			_pipe.execute()
+		for child in cls.__subclasses__():
+			child.save_all()
 
 	def free (self):
 		del self.__class__._objects[self._id]
