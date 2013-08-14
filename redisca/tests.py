@@ -156,6 +156,28 @@ class ModelTestCase (TestCase):
 		self.assertEqual(user2['name'], None)
 		self.assertTrue(user2.loaded())
 
+	def test_origin (self):
+		js = {'name': 'John Smith'}
+		sg = {'name': 'Steve Gobs'}
+
+		user = User(1)
+
+		user.name = 'John Smith'
+		self.assertEqual(user.getorigin(), dict())
+		self.assertEqual(user.getdiff(), js)
+
+		user.save()
+		self.assertEqual(user.getorigin(), js)
+		self.assertEqual(user.getdiff(), dict())
+
+		user.name = 'Steve Gobs'
+		self.assertEqual(user.getorigin(), js)
+		self.assertEqual(user.getdiff(), sg)
+
+		user.save()
+		self.assertEqual(user.getorigin(), sg)
+		self.assertEqual(user.getdiff(), dict())
+
 	def test_save_delete (self):
 		user = User(1)
 		user.name = 'John Smith'

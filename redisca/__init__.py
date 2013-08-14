@@ -133,6 +133,10 @@ class Hash (Key):
 	def getdiff (self):
 		return self._diff
 
+	def getorigin (self):
+		self.load()
+		return self._data.copy()
+
 	def save (self, pipe=None):
 		""" Save model (optionally within given parent pipe). """
 
