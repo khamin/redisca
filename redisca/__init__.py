@@ -465,7 +465,10 @@ class Model (BaseModel):
 	def new (cls, model_id=None):
 		""" Return new model with given id and field.new values.
 		If model id is None hexid() will be used instead.
-		Raise an Exception if model already exists. """
+		Exception raised if model already exists.
+
+		Notice: if model with such id was initialized previously (already in
+		registry) this method will overwrite it with field.new values. """
 
 		if model_id is None:
 			model_id = hexid()
