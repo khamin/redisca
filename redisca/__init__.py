@@ -442,9 +442,10 @@ class Model (BaseModel):
 		except:
 			return conf.db
 
-	def getfields (self):
+	@classmethod
+	def getfields (cls):
 		""" Return name -> field dict of registered fields. """
-		props = self.__class__.__dict__.items()
+		props = cls.__dict__.items()
 		return dict([(k, v) for (k, v) in props if isinstance(v, Field)])
 
 	def getid (self):
