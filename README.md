@@ -137,18 +137,18 @@ Field is the way how you should take control on data in your models. Just define
 
 Available parameters:
 
-* field - hash field which is used as value storage.
-* index - makes field searchable.
-* unique - tells that value should be unique across database. Model.save() will raise an Exception if model of same class already exists with given value.
+* **field** - hash field which is used as value storage.
+* **index** - makes field searchable.
+* **unique** - tells that value should be unique across database. Model.save() will raise an Exception if model of same class already exists with given value.
 
 Built-in fields:
 
-* *String* - extends *Field* with additional parameters *minlen* and *maxlen*.
-* *Email* - extends *String* field with email validation support.
-* *Integer* - extends *Field* with parameters *minval* and *maxval*. Accepts int and numeric strings. Returns int.
-* *Reference* - extends *Field* with *cls* (reference class) parameter. Accepts and returns instance of *cls*.
-* *MD5Pass* - extends *String* field. Acts like string but converts given string to md5 sum.
-* *DateTime* - extends *Field* without additional parameters. Accepts datetime and int(timestamp) values. Returns datetime.
+* **String** - extends *Field* with additional parameters *minlen* and *maxlen*.
+* **Email** - extends *String* field with email validation support.
+* **Integer** - extends *Field* with parameters *minval* and *maxval*. Accepts int and numeric strings. Returns int.
+* **Reference** - extends *Field* with *cls* (reference class) parameter. Accepts and returns instance of *cls*.
+* **MD5Pass** - extends *String* field. Acts like string but converts given string to md5 sum.
+* **DateTime** - extends *Field* without additional parameters. Accepts datetime and int(timestamp) values. Returns datetime.
 
 ## Registry
 
