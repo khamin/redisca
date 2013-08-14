@@ -96,10 +96,8 @@ class Hash (Key):
 		return val
 
 	def export (self):
-		self.load()
-		data = self._data.copy()
+		data = self.getorigin()
 		data.update(self._diff)
-
 		return dict([(k, v) for (k, v) in data.items() if v is not None])
 
 	def load (self):
