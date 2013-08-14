@@ -39,7 +39,7 @@ class Key (object):
 		return self._exists
 
 	def delete (self, pipe=None):
-		_pipe = self.pipe(pipe)
+		_pipe = self.getpipe(pipe)
 
 		if self._exists is False:
 			return
@@ -49,7 +49,7 @@ class Key (object):
 		if pipe is None and len(_pipe):
 			_pipe.execute()
 
-	def pipe (self, pipe=None):
+	def getpipe (self, pipe=None):
 		return self._db.pipeline(transaction=True) if pipe is None else pipe
 
 
@@ -139,7 +139,7 @@ class Hash (Key):
 		if not len(self._diff):
 			return
 
-		_pipe = self.pipe(pipe)
+		_pipe = self.getpipe(pipe)
 
 		if self._exists is not False: # Remove hash item.
 			for k, v in self._diff.items():
@@ -476,7 +476,7 @@ class Model (BaseModel):
 				else cls.__name__.lower()
 
 	def delete (self, pipe=None):
-		_pipe = self.pipe(pipe)
+		_pipe = self.getpipe(pipe)
 
 		for field in self.getfields().values():
 			if field.index or field.unique:
@@ -488,7 +488,7 @@ class Model (BaseModel):
 			_pipe.execute()
 
 	def save (self, pipe=None):
-		_pipe = self.pipe(pipe)
+		_pipe = self.getpipe(pipe)
 		diff = self.getdiff()
 
 		fields = [f for f in self.getfields().values() \
