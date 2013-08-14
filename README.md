@@ -144,6 +144,8 @@ Prefix and key are available for reading:
 
 ```python
 print(User.getprefix()) # Will produce usr
+
+user = User(1)
 print(user.getkey()) # Will produce usr:1
 ```
 
