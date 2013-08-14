@@ -225,8 +225,7 @@ app.config['REDISCA'] = {
 FlaskRedisca(app)
 ```
 
-This extension will save all known models at the end of request and completely cleanup registry.
-Unchanged and deleted instances are untachable. If you want to skip locally changed instances use free() method during request life.
+Pass optional *autosave=True* parameter to FlaskRedisca constructor and *redisca* will save all known models at the end of request. Unchanged and deleted models instances are ignored. If you want to skip locally changed instances use free() method during request life.
 
 # Python 3.x support
 

@@ -513,7 +513,9 @@ class Model (BaseModel):
 
 
 class FlaskRedisca (object):
-	def __init__ (self, app=None):
+	def __init__ (self, app=None, autosave=False):
+		self.autosave = autosave
+
 		if app is not None:
 			self.init_app(app)
 
@@ -528,5 +530,7 @@ class FlaskRedisca (object):
 		pass
 
 	def after_request (self, exc):
-		Model.save_all()
+		if self.autosave:
+			Model.save_all()
+
 		Model.free_all()
