@@ -131,7 +131,7 @@ class Hash (Key):
 		self._data = None
 
 	def getdiff (self):
-		return self._diff
+		return self._diff.copy()
 
 	def getorigin (self):
 		self.load()
