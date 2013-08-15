@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/khamin/redisca.png?branch=master)](https://travis-ci.org/khamin/redisca)
+
 # Installation
 
 Using PyPi (recommended):
@@ -151,7 +153,7 @@ print(user.getkey()) # Will produce usr:1
 
 ## Fields
 
-Field is the way how you should take control on data in your models. Just define class variables with field-specific options and take classic ORM's advantages:
+Field is the way how you should control data in your models. Just define class variables with field-specific options and take classic ORM's advantages:
 
 * data validation;
 * native python data types support;
