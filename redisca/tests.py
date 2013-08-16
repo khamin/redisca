@@ -402,19 +402,23 @@ class ModelTestCase (TestCase):
 
 		User.save_all()
 
-		self.assertEqual(99, len(User.age.find()))
-		self.assertEqual(99, len(User.age.find(1, 99)))
-		self.assertEqual(75, len(User.age.find(maxval=75)))
-		self.assertEqual(50, len(User.age.find(50)))
-		self.assertEqual(26, len(User.age.find(25, 50)))
-		self.assertEqual(75, len(User.age.find(25)))
+		self.assertEqual(99, len(User.age.range()))
+		self.assertEqual(99, len(User.age.range(1, 99)))
+		self.assertEqual(75, len(User.age.range(maxval=75)))
+		self.assertEqual(50, len(User.age.range(50)))
+		self.assertEqual(26, len(User.age.range(25, 50)))
+		self.assertEqual(75, len(User.age.range(25)))
 
-		users = User.age.find(25, num=2)
+		users = User.age.range(25, num=2)
 		self.assertEqual(2, len(users))
 		self.assertEqual(users[0].age, 25)
 		self.assertEqual(users[1].age, 26)
 
-		users = User.age.find(25, start=1, num=2)
+		users = User.age.range(25, start=1, num=2)
 		self.assertEqual(2, len(users))
 		self.assertEqual(users[0].age, 26)
 		self.assertEqual(users[1].age, 27)
+
+		users = User.age.find(15)
+		self.assertEqual(len(users), 1)
+		self.assertEqual(users[0].age, 15)

@@ -261,7 +261,10 @@ class RangeIndexField (Field):
 	def idx_key (self, prefix):
 		return ':'.join((prefix, self.field))
 
-	def find (self, minval='-inf', maxval='+inf', start=None, num=None):
+	def find (self, val):
+		return self.range(val, val)
+
+	def range (self, minval='-inf', maxval='+inf', start=None, num=None):
 		assert self.index or self.unique
 
 		if num is not None and start is None:

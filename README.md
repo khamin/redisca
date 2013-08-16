@@ -116,7 +116,7 @@ users = User.email.find('foo@bar.com') # List of matched models instances.
 Subclasses of *RangeIndexField* has a limited support for ranged queries:
 
 ```python
-users = User.age.find(minval=0, maxval=100, start=50, num=10)
+users = User.age.range(minval=0, maxval=100, start=50, num=10)
 ```
 
 Such call is equivalent of:
