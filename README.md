@@ -113,6 +113,18 @@ As shown above User.email index enabled. It helps to find models by field value:
 users = User.email.find('foo@bar.com') # List of matched models instances.
 ```
 
+Subclasses of *RangeIndexField* has a limited support for ranged queries:
+
+```python
+users = User.age.find(minval=0, maxval=100, start=50, num=10)
+```
+
+Such call is equivalent of:
+
+```sql
+SELECT * FROM `users` where `age` BETWEEN 0 AND 100 LIMIT 10 OFFSET 50;
+```
+
 ## Per-Model Database Configuration
 
 You can setup **inheritable** per-model database connection using *conf* class decorator:
