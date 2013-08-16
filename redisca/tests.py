@@ -267,10 +267,11 @@ class ModelTestCase (TestCase):
 		user.email = 'foo@bar.com'
 		user.save()
 
-		user = User(2)
-		user.email = 'foo@bar.com'
+		with self.assertRaises(Exception):
+			user = User(2)
+			user.email = 'foo@bar.com'
+			user.save()
 
-		self.assertRaises(Exception, user.save)
 		user = User(1)
 		user.email = None
 
