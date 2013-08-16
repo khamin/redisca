@@ -90,6 +90,12 @@ class ModelTestCase (TestCase):
 		User.free_all()
 		Language.free_all()
 
+	def test_prefix (self):
+		self.assertEqual(User.getprefix(), 'u')
+		self.assertEqual(SubUser.getprefix(), 'subuser')
+		self.assertEqual(Language.getprefix(), 'language')
+		self.assertEqual(SubLang.getprefix(), 'sublang')
+
 	def test_db (self):
 		self.assertTrue(User.getdb() is redis0)
 		self.assertTrue(SubUser.getdb() is redis0)
