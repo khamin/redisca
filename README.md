@@ -169,12 +169,12 @@ Available parameters:
 
 Built-in fields:
 
-* **String** - extends *Field* with additional parameters *minlen* and *maxlen*.
-* **Email** - extends *String* field with email validation support.
-* **Integer** - extends *Field* with parameters *minval* and *maxval*. Accepts int and numeric strings. Returns int.
-* **Reference** - extends *Field* with *cls* (reference class) parameter. Accepts and returns instance of *cls*.
+* **String** - extends *IndexField* with additional parameters *minlen* and *maxlen*.
+* **Email** - extends *IndexField* field with email validation support.
+* **Integer** - extends *RangeIndexField* with parameters *minval* and *maxval*. Accepts int and numeric strings. Returns int.
+* **Reference** - extends *IndexField* with *cls* (reference class) parameter. Accepts and returns instance of *cls*.
 * **MD5Pass** - extends *String* field. Acts like string but converts given string to md5 sum.
-* **DateTime** - extends *Field* without additional parameters. Accepts datetime and int(timestamp) values. Returns datetime.
+* **DateTime** - extends *RangeIndexField* without additional parameters. Accepts datetime and int(timestamp) values. Returns datetime.
 
 ## Registry
 

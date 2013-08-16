@@ -55,6 +55,7 @@ class User (Model):
 		field='age',
 		minval=0,
 		maxval=100,
+		index=True,
 	)
 
 
@@ -387,3 +388,27 @@ class ModelTestCase (TestCase):
 
 	def test_intid (self):
 		self.assertEqual(type(intid()), int)
+
+	def test_range_idx (self):
+		for age in range(1, 100):
+			user = User.new()
+			user.age = age
+
+		User.save_all()
+
+		self.assertEqual(99, len(User.age.find()))
+		self.assertEqual(99, len(User.age.find(1, 99)))
+		self.assertEqual(75, len(User.age.find(maxval=75)))
+		self.assertEqual(50, len(User.age.find(50)))
+		self.assertEqual(26, len(User.age.find(25, 50)))
+		self.assertEqual(75, len(User.age.find(25)))
+
+		users = User.age.find(25, num=2)
+		self.assertEqual(2, len(users))
+		self.assertEqual(users[0].age, 25)
+		self.assertEqual(users[1].age, 26)
+
+		users = User.age.find(25, start=1, num=2)
+		self.assertEqual(2, len(users))
+		self.assertEqual(users[0].age, 26)
+		self.assertEqual(users[1].age, 27)

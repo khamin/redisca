@@ -16,7 +16,7 @@ EMAIL_REGEXP = re.compile(r"^[a-z0-9]+[_a-z0-9-]*(\.[_a-z0-9-]+)*@[a-z0-9]+[\.a-
 
 def intid ():
 	""" Return pseudo-unique decimal id. """
-	return int((time() - 1374000000) * 100) * 100 + randint(0, 99)
+	return int((time() - 1374000000) * 100000) * 100 + randint(0, 99)
 
 
 def hexid ():
@@ -192,9 +192,16 @@ class Field (object):
 	def __set__ (self, model, value):
 		model[self.field] = value
 
+
+class IndexField (Field):
+	""" Base class for fields with exact indexing. """
+
+	def idx_key (self, prefix, val):
+		return ':'.join((prefix, self.field, str(val)))
+
 	def find (self, val):
 		assert self.index or self.unique
-		key = index_key(self.owner.getprefix(), self.field, val)
+		key = self.idx_key(self.owner.getprefix(), val)
 		ids = self.owner.getdb().smembers(key)
 		return [self.owner(model_id) for model_id in ids]
 
@@ -202,53 +209,87 @@ class Field (object):
 		""" Return *count* random model(s) from find() result. """
 
 		assert self.index or self.unique
-		key = index_key(self.owner.getprefix(), self.field, val)
+		key = self.idx_key(self.owner.getprefix(), val)
 		ids = self.owner.getdb().srandmember(key, count)
 
 		return None if not len(ids) else \
 			[self.owner(model_id) for model_id in ids]
 
-	def save_index (self, model, pipe=None):
-		key = index_key(model.getprefix(), self.field, model[self.field])
+	def save_idx (self, model, pipe=None):
+		prev_idx_val = self.prev_idx_val(model)
+
+		if prev_idx_val == model[self.field]:
+			return # Nothing to do.
+
+		idx_key = self.idx_key(model.getprefix(), model[self.field])
 
 		if self.unique:
-			model_id = bytes(model._id, 'utf-8') if PY3K else model._id
-			ids = model.getdb().smembers(key)
-			ids.discard(model_id)
+			ids = model.getdb().smembers(idx_key)
 
 			if len(ids):
-				raise Exception('Duplicate key error')
+				ids.discard(bytes(model._id, 'utf-8') if PY3K else model._id)
 
-		prev_idx_key = self._prev_idx_key(model)
+				if len(ids):
+					raise Exception('Duplicate key error')
 
-		if prev_idx_key != key:
-			pipe.srem(prev_idx_key, model._id)
-			pipe.sadd(key, model._id)
+		prev_idx_key = self.idx_key(model.getprefix(), prev_idx_val)
+		pipe.srem(prev_idx_key, model._id)
+		pipe.sadd(idx_key, model._id)
 
-	def del_index (self, model, pipe=None):
-		# Get previous index value.
-		pipe.srem(self._prev_idx_key(model), model._id)
+	def del_idx (self, model, pipe=None):
+		prev_idx_val = self.prev_idx_val(model)
+		prev_idx_key = self.idx_key(model.getprefix(), prev_idx_val)
+		pipe.srem(prev_idx_key, model._id)
 
-	def _prev_idx_key (self, model):
-		""" Get previous value index key. """
+	def prev_idx_val (self, model):
+		""" Get previously indexed value. """
 
 		if model.loaded() and self.field in model._data:
-			prev_val = model._data[self.field]
+			return model._data[self.field]
 
 		else:
 			prev_val = model.getdb().hget(model.getkey(), self.field)
 
-			if PY3K and prev_val is not None:
-				prev_val = prev_val.decode('utf-8')
-
-		return index_key(model.getprefix(), self.field, prev_val)
-
-
-def index_key (prefix, name, value):
-	return ':'.join((prefix, name, str(value)))
+			return prev_val.decode('utf-8') \
+				if PY3K and prev_val is not None \
+					else prev_val
 
 
-class String (Field):
+class RangeIndexField (Field):
+	""" Base class for fields with range indexing. """
+
+	def idx_key (self, prefix):
+		return ':'.join((prefix, self.field))
+
+	def find (self, minval='-inf', maxval='+inf', start=None, num=None):
+		assert self.index or self.unique
+
+		if num is not None and start is None:
+			start = 0
+
+		key = self.idx_key(self.owner.getprefix())
+		db = self.owner.getdb()
+		ids = db.zrangebyscore(key, minval, maxval, start=start, num=num)
+		return [self.owner(model_id) for model_id in ids]
+
+	def save_idx (self, model, pipe=None):
+		key = self.idx_key(model.getprefix())
+		val = model[self.field]
+
+		if self.unique:
+			models = self.find(val, val)
+
+			if len(models) > 1 or len(models) == 1 and models[0] is not model:
+				raise Exception('Duplicate key error')
+
+		pipe.zadd(key, model._id, val)
+
+	def del_idx (self, model, pipe=None):
+		key = self.idx_key(model.getprefix())
+		pipe.zrem(key, model._id)
+
+
+class String (IndexField):
 	def __init__ (self, minlen=None, maxlen=None, **kw):
 		super(String, self).__init__(**kw)
 
@@ -275,7 +316,7 @@ class String (Field):
 		model[self.field] = value
 
 
-class Email (Field):
+class Email (IndexField):
 	def __set__ (self, model, value):
 		if value is not None and EMAIL_REGEXP.match(value) == None:
 			raise Exception('Email validation failed')
@@ -283,7 +324,7 @@ class Email (Field):
 		return super(Email, self).__set__(model, value)
 
 
-class Integer (Field):
+class Integer (RangeIndexField):
 	def __init__ (self, minval=None, maxval=None, **kw):
 		super(Integer, self).__init__(**kw)
 
@@ -310,7 +351,7 @@ class Integer (Field):
 		model[self.field] = value
 
 
-class DateTime (Field):
+class DateTime (RangeIndexField):
 	def __get__ (self, model, owner):
 		self.owner = owner
 
@@ -343,7 +384,7 @@ class MD5Pass (String):
 			model[self.field] = md5(val).hexdigest()
 
 
-class Reference (Field):
+class Reference (IndexField):
 	def __init__ (self, cls, **kw):
 		super(Reference, self).__init__(**kw)
 		assert issubclass(cls, Model)
@@ -486,7 +527,7 @@ class Model (BaseModel):
 
 		for field in self.getfields().values():
 			if field.index or field.unique:
-				field.del_index(self, _pipe)
+				field.del_idx(self, _pipe)
 
 		super(Model, self).delete(_pipe)
 
@@ -501,7 +542,7 @@ class Model (BaseModel):
 			if f.field in diff and (f.index or f.unique)]
 
 		for field in fields:
-			field.save_index(self, _pipe)
+			field.save_idx(self, _pipe)
 
 		super(Model, self).save(_pipe)
 
