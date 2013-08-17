@@ -156,7 +156,7 @@ Model key format is:
 
 	model_key_prefix:model_id
 
-Default model_key_prefix is *lowercased class name**. Use *conf* class decorator to override it like this:
+Default model_key_prefix is *lowercased class name*. Use *conf* class decorator to override it like this:
 
 ```python
 from redisca import Model
@@ -173,8 +173,6 @@ print(user.getkey())    # 'usr:1'
 # Tools
 
 ## ID Generator
-
-*Redisca* can help you with pseudo-unique id generation:
 
 ```python
 from redisca import hexid
