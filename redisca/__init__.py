@@ -24,160 +24,6 @@ def hexid ():
 	return '%x' % intid()
 
 
-class Key (object):
-	def __init__ (self, key, db=None):
-		self._key = key
-		self._exists = None
-		self._db = db or conf.db
-
-	def exists (self):
-		""" Check if model key exists. """
-
-		if self._exists is None:
-			self._exists = self._db.exists(self._key)
-
-		return self._exists
-
-	def delete (self, pipe=None):
-		_pipe = self.getpipe(pipe)
-
-		if self._exists is False:
-			return
-
-		_pipe.delete(self._key)
-
-		if pipe is None and len(_pipe):
-			_pipe.execute()
-
-	def getpipe (self, pipe=None):
-		return self._db.pipeline(transaction=True) if pipe is None else pipe
-
-
-class Hash (Key):
-	def __init__ (self, key, db=None):
-		super(Hash, self).__init__(key, db)
-
-		self._diff = dict()
-		self._data = None
-
-	def __len__ (self):
-		return len(self.export())
-
-	def __contains__ (self, name):
-		if name in self._diff:
-			return True
-
-		self.load()
-		return name in self._data
-
-	def __getitem__ (self, name):
-		if name in self._diff:
-			return self._diff[name]
-
-		self.load()
-		return self._data[name] if name in self._data else None
-
-	def __setitem__ (self, name, value):
-		if self.loaded() and name in self._data and self._data[name] == value:
-			pass
-
-		else:
-			self._diff[name] = value
-
-	def __delitem__ (self, name):
-		self._diff[name] = None
-
-	def get (self, name, default=None):
-		return self[name] if name in self else default
-
-	def pop (self, name, default=None):
-		val = self.get(name, default)
-		del self[name]
-		return val
-
-	def export (self):
-		data = self.getorigin()
-		data.update(self._diff)
-		return dict([(k, v) for (k, v) in data.items() if v is not None])
-
-	def load (self):
-		""" Load data into hash if needed. """
-
-		if self.loaded():
-			return
-
-		self._data = dict()
-
-		if self._exists is False:
-			return
-
-		for k, v in self._db.hgetall(self._key).items():
-			if PY3K:
-				k = k.decode(encoding='UTF-8')
-				v = v.decode(encoding='UTF-8')
-
-			self._data[k] = v
-
-		self._exists = bool(len(self._data))
-
-	def loaded (self):
-		""" Check if model data is loaded. """
-		return self._data is not None
-
-	def unload (self):
-		""" Unload model data. """
-		self._data = None
-
-	def getdiff (self):
-		return self._diff.copy()
-
-	def getorigin (self):
-		self.load()
-		return self._data.copy()
-
-	def save (self, pipe=None):
-		""" Save model (optionally within given parent pipe). """
-
-		if not len(self._diff):
-			return
-
-		_pipe = self.getpipe(pipe)
-
-		if self._exists is not False: # Remove hash item.
-			for k, v in self._diff.items():
-				if v is None:
-					_pipe.hdel(self._key, k)
-
-		# Cleanup diff from None values.
-		self._diff = dict([i for i in self._diff.items() if i[1] is not None])
-
-		if not len(self._diff):
-			return
-
-		if self.loaded():
-			self._data.update(self._diff)
-
-		_pipe.hmset(self._key, self._diff)
-		self._exists = True
-		self._diff = dict()
-
-		if pipe is None and len(_pipe):
-			_pipe.execute()
-
-	def delete (self, pipe=None):
-		""" Delete model (optionally within given parent pipe). """
-
-		super(Hash, self).delete(pipe)
-
-		self._diff = dict()
-		self._data = dict()
-		self._exists = False
-
-	def revert (self):
-		""" Revert local changes. """
-		self._diff = dict()
-
-
 class Field (object):
 	def __init__ (self, field, index=False, unique=False, new=None):
 		self.new = new
@@ -463,10 +309,10 @@ class conf (object):
 
 
 if PY3K:
-	exec('class BaseModel (Hash, metaclass=MetaModel): pass')
+	exec('class BaseModel (metaclass=MetaModel): pass')
 
 else:
-	exec('class BaseModel (Hash): __metaclass__ = MetaModel')
+	exec('class BaseModel (object): __metaclass__ = MetaModel')
 
 
 class Model (BaseModel):
@@ -474,8 +320,65 @@ class Model (BaseModel):
 
 	def __init__ (self, model_id):
 		self._id = model_id
-		key = ':'.join((self.getprefix(), self._id))
-		super(Model, self).__init__(key, self.getdb())
+		self._key = ':'.join((self.getprefix(), self._id))
+
+		self._exists = None
+		self._diff = dict()
+		self._data = None
+
+	def __len__ (self):
+		return len(self.export())
+
+	def __contains__ (self, name):
+		if name in self._diff:
+			return True
+
+		self.load()
+		return name in self._data
+
+	def __getitem__ (self, name):
+		if name in self._diff:
+			return self._diff[name]
+
+		self.load()
+		return self._data[name] if name in self._data else None
+
+	def __setitem__ (self, name, value):
+		if self.loaded() and name in self._data and self._data[name] == value:
+			pass
+
+		else:
+			self._diff[name] = value
+
+	def __delitem__ (self, name):
+		self._diff[name] = None
+
+	def get (self, name, default=None):
+		return self[name] if name in self else default
+
+	def pop (self, name, default=None):
+		val = self.get(name, default)
+		del self[name]
+		return val
+
+	def exists (self):
+		""" Check if model key exists. """
+
+		if self._exists is None:
+			self._exists = self.getdb().exists(self._key)
+
+		return self._exists
+
+	def revert (self):
+		""" Revert local changes. """
+		self._diff = dict()
+
+	def getdiff (self):
+		return self._diff.copy()
+
+	def getorigin (self):
+		self.load()
+		return self._data.copy()
 
 	@classmethod
 	def getdb (cls):
@@ -504,6 +407,10 @@ class Model (BaseModel):
 				else cls.__name__.lower()
 
 	@classmethod
+	def getpipe (cls, pipe=None):
+		return cls.getdb().pipeline(transaction=True) if pipe is None else pipe
+
+	@classmethod
 	def new (cls, model_id=None):
 		""" Return new model with given id and field.new values.
 		If model id is None hexid() will be used instead.
@@ -525,40 +432,102 @@ class Model (BaseModel):
 
 		return model
 
+	def export (self):
+		data = self.getorigin()
+		data.update(self._diff)
+		return {k: v for (k, v) in data.items() if v is not None}
+
+	def load (self):
+		""" Load data into hash if needed. """
+
+		if self.loaded():
+			return
+
+		self._data = dict()
+
+		if self._exists is False:
+			return
+
+		for k, v in self.getdb().hgetall(self._key).items():
+			if PY3K:
+				k = k.decode(encoding='UTF-8')
+				v = v.decode(encoding='UTF-8')
+
+			self._data[k] = v
+
+		self._exists = bool(len(self._data))
+
+	def loaded (self):
+		""" Check if model data is loaded. """
+		return self._data is not None
+
+	def unload (self):
+		""" Unload model data. """
+		self._data = None
+
 	def delete (self, pipe=None):
+		""" Delete model (optionally within given parent pipe). """
+
 		_pipe = self.getpipe(pipe)
 
 		for field in self.getfields().values():
 			if field.index or field.unique:
 				field.del_idx(self, _pipe)
 
-		super(Model, self).delete(_pipe)
+		if self._exists is not False:
+			_pipe.delete(self._key)
+
+			self._diff = dict()
+			self._data = dict()
+			self._exists = False
 
 		if pipe is None and len(_pipe):
 			_pipe.execute()
 
 	def save (self, pipe=None):
-		_pipe = self.getpipe(pipe)
-		diff = self.getdiff()
+		if not len(self._diff):
+			return
 
 		fields = [f for f in self.getfields().values() \
-			if f.field in diff and (f.index or f.unique)]
+			if f.field in self._diff and (f.index or f.unique)]
+
+		_pipe = self.getpipe(pipe)
 
 		for field in fields:
 			field.save_idx(self, _pipe)
 
-		super(Model, self).save(_pipe)
+		delkeys = []
+		loaded = self.loaded()
+
+		for key, val in self.getdiff().items():
+			if val is None:
+				delkeys.append(key)
+				del self._diff[key]
+
+				if loaded and key in self._data:
+					del self._data[key]
+
+		if self._exists is not False and len(delkeys):
+			_pipe.hdel(self._key, *delkeys)
+
+		if len(self._diff):
+			_pipe.hmset(self._key, self._diff)
 
 		if pipe is None and len(_pipe):
 			_pipe.execute()
+
+		if loaded:
+			self._data.update(self._diff)
+
+		self._exists = True
+		self._diff = dict()
 
 	@classmethod
 	def save_all (cls, pipe=None):
 		""" Save all known models. Deleted models ignored by empty diff. """
 
 		if cls is not Model:
-			_pipe = cls.getdb().pipeline(transaction=True) \
-				if pipe is None else pipe
+			_pipe = cls.getpipe(pipe)
 
 			for model in cls._objects.values():
 				model.save(_pipe)
