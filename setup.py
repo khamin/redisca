@@ -33,6 +33,6 @@ setup(
 	),
 
 	install_requires = [
-		'redis'
+		'redis >= 2.7'
 	]
 )
