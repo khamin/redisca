@@ -1,4 +1,7 @@
-|Build Status|
+Master branch: |Build Status|
+
+.. |Build Status| image:: https://travis-ci.org/khamin/redisca.png?branch=master
+   :target: https://travis-ci.org/khamin/redisca
 
 Installation
 ============
@@ -9,16 +12,13 @@ Using PyPi (recommended):
 
 	sudo pip install redisca
 
-Using previously downloaded archive:
+or
 
 ::
 
 	wget https://pypi.python.org/packages/source/r/redisca/redisca-X.tar.gz
 	tar xvf redisca-X.tar.gz
 	sudo python redisca-X/setup.py install
-
-.. |Build Status| image:: https://travis-ci.org/khamin/redisca.png?branch=master
-   :target: https://travis-ci.org/khamin/redisca
 
 Model
 =====
@@ -96,7 +96,7 @@ Here is an example how to get model instance using id *(empty model returned if 
 	user = User('user id')
 	print(user.email) # 'foo@bar.com'
 
-Each initialized model is saved in registry and returned on each attempt of re-init.
+Each initialized model is saved in registry and returned on each attempt of re-init:
 
 .. code:: python
 
@@ -184,7 +184,7 @@ Default model\_key\_prefix is *lowercased class name*. Use *conf* class decorato
 		pass
 
 	print(User.getprefix()) # 'usr'
-	print(user.getkey())	# 'usr:1'
+	print(user.getkey())    # 'usr:1'
 
 Tools
 =====
@@ -224,7 +224,7 @@ Requirements
 ============
 
 -  redis-py 2.7+
--  python 2.7+ or 3.2+
+-  python 2.7/3.2+ or pypy 2.1+
 
 Python 3.x support
 ------------------
