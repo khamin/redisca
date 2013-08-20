@@ -327,7 +327,7 @@ class Model (BaseModel):
 		self._data = None
 
 	def __len__ (self):
-		return len(self.export())
+		return len(self.raw_export())
 
 	def __contains__ (self, name):
 		if name in self._diff:
@@ -432,7 +432,9 @@ class Model (BaseModel):
 
 		return model
 
-	def export (self):
+	def raw_export (self):
+		""" Return a copy of model raw-data dict excluding None values. """
+
 		data = self.getorigin()
 		data.update(self._diff)
 		return {k: v for (k, v) in data.items() if v is not None}

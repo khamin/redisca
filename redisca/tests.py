@@ -17,8 +17,8 @@ from redisca import hexid
 from redisca import intid
 from redisca import conf
 
-
-NOW = datetime.fromtimestamp(int(time()))
+NOW_TS = int(time())
+NOW = datetime.fromtimestamp(NOW_TS)
 
 
 redis0 = Redis(db=0)
@@ -362,13 +362,23 @@ class ModelTestCase (TestCase):
 		with self.assertRaises(Exception):
 			user.name = '1234567890_'
 
-	def test_export (self):
+	def test_raw_export (self):
 		user = User(1)
 		user.name = 'foobar'
-		self.assertEqual(user.export(), {'name': 'foobar'})
+		user.email = 'foo@bar.com'
+		user.created = NOW
 
-		user.name = None
-		self.assertEqual(user.export(), dict())
+		self.assertEqual(user.raw_export(), {
+			'eml': 'foo@bar.com',
+			'name': 'foobar',
+			'created': NOW_TS,
+		})
+
+		user.name  = None
+		user.email = None
+		del user['created']
+
+		self.assertEqual(user.raw_export(), dict())
 
 	def test_get (self):
 		user = User(1)
