@@ -185,7 +185,12 @@ class Integer (RangeIndexField):
 
 	def __get__ (self, model, owner):
 		self.owner = owner
-		return self if model is None else int(model[self.field])
+
+		if model is None:
+			return self
+
+		val = model[self.field]
+		return None if val is None else int(val)
 
 	def __set__ (self, model, value):
 		if value is not None:
