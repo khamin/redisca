@@ -212,8 +212,8 @@ class DateTime (RangeIndexField):
 		if model is None:
 			return self
 
-		return None if model[self.field] is None \
-			else datetime.fromtimestamp(int(model[self.field]))
+		val = model[self.field]
+		return None if val is None else datetime.fromtimestamp(int(val))
 
 	def __set__ (self, model, value):
 		if value is not None:
