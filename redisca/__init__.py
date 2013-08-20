@@ -438,13 +438,13 @@ class Model (BaseModel):
 		return model
 
 	def raw_export (self):
-		""" Return a copy of model raw-data dict excluding None values. """
+		""" Return a copy of model raw-data dict. """
 
 		data = self.getorigin()
 		data.update(self._diff)
 		return {k: v for (k, v) in data.items() if v is not None}
 
-	def export (self):
+	def export (self, keep_none=False):
 		""" Export model fields data as dict. """
 
 		data = dict()
@@ -452,7 +452,7 @@ class Model (BaseModel):
 		for name in self.getfields():
 			val = getattr(self, name)
 
-			if val is not None:
+			if keep_none or val is not None:
 				data[name] = val
 
 		return data

@@ -392,11 +392,29 @@ class ModelTestCase (TestCase):
 			'created': NOW,
 		})
 
+		self.assertEqual(user.export(keep_none=True), {
+			'email': 'foo@bar.com',
+			'password': None,
+			'name': 'foobar',
+			'created': NOW,
+			'age': None,
+			'lang': None,
+		})
+
 		user.name  = None
 		user.email = None
 		del user['created']
 
-		self.assertEqual(user.raw_export(), dict())
+		self.assertEqual(user.export(), dict())
+
+		self.assertEqual(user.export(keep_none=True), {
+			'email': None,
+			'name': None,
+			'password': None,
+			'created': None,
+			'age': None,
+			'lang': None,
+		})
 
 	def test_get (self):
 		user = User(1)
