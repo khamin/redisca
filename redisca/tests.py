@@ -469,3 +469,7 @@ class ModelTestCase (TestCase):
 		users = User.age.find(15)
 		self.assertEqual(len(users), 1)
 		self.assertEqual(users[0].age, 15)
+
+	def test_none_id (self):
+		self.assertTrue(User(None) is not User('None'))
+		self.assertTrue(User(None) is User(''))

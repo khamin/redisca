@@ -281,7 +281,10 @@ class MetaModel (type):
 		return cls
 
 	def __call__ (cls, model_id, *args, **kw):
-		if PY3K and type(model_id) is bytes:
+		if model_id is None:
+			model_id = ''
+
+		elif PY3K and type(model_id) is bytes:
 			model_id = model_id.decode('utf-8')
 
 		else:
