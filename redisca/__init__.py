@@ -444,6 +444,19 @@ class Model (BaseModel):
 		data.update(self._diff)
 		return {k: v for (k, v) in data.items() if v is not None}
 
+	def export (self):
+		""" Export model fields data as dict. """
+
+		data = dict()
+
+		for name in self.getfields():
+			val = getattr(self, name)
+
+			if val is not None:
+				data[name] = val
+
+		return data
+
 	def load (self):
 		""" Load data into hash if needed. """
 

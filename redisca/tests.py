@@ -380,6 +380,24 @@ class ModelTestCase (TestCase):
 
 		self.assertEqual(user.raw_export(), dict())
 
+	def test_export (self):
+		user = User(1)
+		user.name = 'foobar'
+		user.email = 'foo@bar.com'
+		user['created'] = NOW_TS
+
+		self.assertEqual(user.export(), {
+			'email': 'foo@bar.com',
+			'name': 'foobar',
+			'created': NOW,
+		})
+
+		user.name  = None
+		user.email = None
+		del user['created']
+
+		self.assertEqual(user.raw_export(), dict())
+
 	def test_get (self):
 		user = User(1)
 		self.assertEqual(user.get('somekey'), None)
