@@ -435,10 +435,15 @@ class Model (BaseModel):
 		if model.exists():
 			raise Exception('%s(%s) already exists' % (cls.__name__, model_id))
 
-		for name, field in cls.getfields().items():
-			setattr(model, name, field.new)
+		return model.fill_new()
 
-		return model
+	def fill_new (self):
+		""" Fill model with *new* values. """
+
+		for name, field in self.getfields().items():
+			setattr(self, name, field.new)
+
+		return self
 
 	def raw_export (self):
 		""" Return a copy of model raw-data dict. """
