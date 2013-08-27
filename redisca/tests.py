@@ -27,8 +27,15 @@ redis1 = Redis(db=1)
 conf.db = redis0
 
 
+class BaseModel (Model):
+	created = DateTime(
+		field='created',
+		new=NOW,
+	)
+
+
 @conf(prefix='u')
-class User (Model):
+class User (BaseModel):
 	email = Email(
 		field='eml',
 		unique=True,
@@ -46,11 +53,6 @@ class User (Model):
 		index=True,
 	)
 
-	created = DateTime(
-		field='created',
-		new=NOW,
-	)
-
 	age = Integer(
 		field='age',
 		minval=0,
@@ -60,7 +62,7 @@ class User (Model):
 
 
 @conf(db=redis1)
-class Language (Model):
+class Language (BaseModel):
 	name = String(
 		field='name'
 	)

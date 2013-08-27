@@ -399,8 +399,15 @@ class Model (BaseModel):
 	@classmethod
 	def getfields (cls):
 		""" Return name -> field dict of registered fields. """
-		props = cls.__dict__.items()
-		return dict([(k, v) for (k, v) in props if isinstance(v, Field)])
+		fields = dict()
+
+		for name in dir(cls):
+			field = getattr(cls, name)
+
+			if isinstance(field, Field):
+				fields[name] = field
+
+		return fields
 
 	def getid (self):
 		return self._id
