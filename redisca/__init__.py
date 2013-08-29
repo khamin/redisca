@@ -90,7 +90,10 @@ class IndexField (Field):
 	def prev_idx_val (self, model):
 		""" Get previously indexed value. """
 
-		if model.loaded() and self.field in model._data:
+		if not model.exists():
+			return None
+
+		elif model.loaded() and self.field in model._data:
 			return model._data[self.field]
 
 		else:
