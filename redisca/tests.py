@@ -475,3 +475,37 @@ class ModelTestCase (TestCase):
 	def test_none_id (self):
 		self.assertTrue(User(None) is not User('None'))
 		self.assertTrue(User(None) is User(''))
+
+	def test_unicode (self):
+		names = (u'Вася', u'Пупкин', 'John', 'Smith')
+
+		for name in names:
+			user = User(1)
+			user.name = name
+
+			self.assertEqual(user.name, name)
+			user.save()
+
+			self.assertEqual(user.name, name)
+			user.free()
+
+			user = User(1)
+			self.assertEqual(user.name, name)
+
+			user.free()
+			user = User.name.find(name)[0]
+			self.assertEqual(user.name, name)
+
+			for find_name in names:
+				if find_name is name:
+					continue
+
+				users = User.name.find(find_name)
+				self.assertEqual(len(users), 0)
+
+			user.delete()
+			user.free()
+
+			for find_name in names:
+				users = User.name.find(find_name)
+				self.assertEqual(len(users), 0)

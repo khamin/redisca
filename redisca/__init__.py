@@ -43,7 +43,8 @@ class IndexField (Field):
 	""" Base class for fields with exact indexing. """
 
 	def idx_key (self, prefix, val):
-		return ':'.join((prefix, self.field, str(val)))
+		val = str(val) if PY3K else unicode(val)
+		return ':'.join((prefix, self.field, val))
 
 	def find (self, val):
 		assert self.index or self.unique
@@ -151,13 +152,9 @@ class String (IndexField):
 		self.minlen = minlen
 		self.maxlen = maxlen
 
-	def __get__ (self, model, owner):
-		val = super(String, self).__get__(model, owner)
-		return val.decode('utf-8') if PY3K and type(val) is bytes else val
-
 	def __set__ (self, model, value):
 		if value is not None:
-			value = str(value)
+			value = str(value) if PY3K else unicode(value)
 
 			if self.minlen is not None and len(value) < self.minlen:
 				raise Exception('Minimal length check failed')
@@ -487,9 +484,8 @@ class Model (BaseModel):
 			return
 
 		for k, v in self.getdb().hgetall(self._key).items():
-			if PY3K:
-				k = k.decode(encoding='UTF-8')
-				v = v.decode(encoding='UTF-8')
+			k = k.decode(encoding='UTF-8')
+			v = v.decode(encoding='UTF-8')
 
 			self._data[k] = v
 
