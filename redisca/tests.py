@@ -5,6 +5,7 @@ from datetime import datetime
 from time import time
 from redis import Redis
 
+from redisca import PY3K
 from redisca import Model
 from redisca import Field
 from redisca import Email
@@ -477,7 +478,11 @@ class ModelTestCase (TestCase):
 		self.assertTrue(User(None) is User(''))
 
 	def test_unicode (self):
-		names = (u'Вася', u'Пупкин', 'John', 'Smith')
+		names = ['Вася', 'Пупкин', 'John', 'Smith']
+
+		if not PY3K:
+			names[0] = names[0].decode('utf8')
+			names[1] = names[1].decode('utf8')
 
 		for name in names:
 			user = User(1)
