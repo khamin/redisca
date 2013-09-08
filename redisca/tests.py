@@ -8,6 +8,7 @@ from redis import Redis
 from redisca import PY3K
 from redisca import Model
 from redisca import Field
+from redisca import Bool
 from redisca import Email
 from redisca import Integer
 from redisca import String
@@ -64,6 +65,11 @@ class User (BaseModel):
 
 @conf(db=redis1)
 class Language (BaseModel):
+	active = Bool (
+		field='active',
+		new=False,
+	)
+
 	name = String(
 		field='name'
 	)
@@ -514,3 +520,35 @@ class ModelTestCase (TestCase):
 			for find_name in names:
 				users = User.name.find(find_name)
 				self.assertEqual(len(users), 0)
+
+	def test_bool (self):
+		lang = Language.new(1)
+		self.assertEqual(lang.active, False)
+
+		lang.active = 1
+		self.assertTrue(lang.active is True)
+		self.assertTrue(lang['active'] is 1)
+
+		lang.active = 0
+		self.assertTrue(lang.active is False)
+		self.assertTrue(lang['active'] is 0)
+
+		lang.active = True
+		self.assertTrue(lang.active is True)
+		self.assertTrue(lang['active'] is 1)
+
+		lang.save()
+		lang.free()
+		
+		lang = Language(1)
+		self.assertTrue(lang.active is True)
+
+		lang.active = 0
+		self.assertTrue(lang.active is False)
+		self.assertTrue(lang['active'] is 0)
+
+		lang.save()
+		lang.free()
+
+		lang = Language(1)
+		self.assertTrue(lang.active is False)

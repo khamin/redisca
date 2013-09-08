@@ -142,6 +142,15 @@ class RangeIndexField (Field):
 		pipe.zrem(key, model._id)
 
 
+class Bool (IndexField):
+	def __get__ (self, model, owner):
+		self.owner = owner
+		return self if model is None else int(model[self.field]) is 1
+
+	def __set__ (self, model, value):
+		model[self.field] = 1 if value else 0
+
+
 class String (IndexField):
 	def __init__ (self, minlen=None, maxlen=None, **kw):
 		super(String, self).__init__(**kw)
