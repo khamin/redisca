@@ -47,6 +47,7 @@ Model
 	   )
 
    user = User.new() # Create model with random id and "new" fields values.
+   user = User.new(model_id='your_id') # Or use custom id if needed.
 
    user.getid() # user id
    user.email = 'foo@bar.com'
