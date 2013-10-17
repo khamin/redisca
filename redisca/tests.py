@@ -67,7 +67,7 @@ class User (BaseModel):
 class Language (BaseModel):
 	active = Bool (
 		field='active',
-		new=False,
+		new=lambda: False,
 	)
 
 	name = String(

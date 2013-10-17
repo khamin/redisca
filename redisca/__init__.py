@@ -8,6 +8,7 @@ from hashlib import md5
 from sys import version_info
 from datetime import datetime
 from redis import StrictRedis
+from inspect import isfunction
 
 
 PY3K = version_info[0] == 3
@@ -457,7 +458,8 @@ class Model (BaseModel):
 		""" Fill model with *new* values. """
 
 		for name, field in self.getfields().items():
-			setattr(self, name, field.new)
+			val = field.new() if isfunction(field.new) else field.new
+			setattr(self, name, val)
 
 		return self
 
