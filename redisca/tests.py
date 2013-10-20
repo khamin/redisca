@@ -5,6 +5,7 @@ from datetime import datetime
 from time import time
 from redis import Redis
 
+from redisca import inheritors
 from redisca import PY3K
 from redisca import Model
 from redisca import Field
@@ -73,6 +74,7 @@ class Language (BaseModel):
 	active = Bool (
 		field='active',
 		new=lambda: False,
+		index=True,
 	)
 
 	name = String(
@@ -557,3 +559,20 @@ class ModelTestCase (TestCase):
 
 		lang = Language(1)
 		self.assertTrue(lang.active is False)
+
+	def test_inheritors (self):
+		children = inheritors(Language)
+		self.assertEqual(children, set([SubLang]))
+
+	def test_find_children (self):
+		Language.new(1).save()
+		SubLang.new(1).save()
+
+		languages = Language.active.find('0')
+		self.assertEqual(languages, [Language(1)])
+
+		languages = SubLang.active.find('0')
+		self.assertEqual(languages, [SubLang(1)])
+
+		languages = Language.active.find('0', children=True)
+		self.assertEqual(languages, [Language(1), SubLang(1)])
