@@ -17,24 +17,6 @@ PY3K = version_info[0] == 3
 EMAIL_REGEXP = re.compile(r"^[a-z0-9]+[_a-z0-9-]*(\.[_a-z0-9-]+)*@[a-z0-9]+[\.a-z0-9-]*(\.[a-z]{2,4})$")
 
 
-
-def inheritors (cls):
-	""" Get class inheritors. """
-
-	subclasses = set()
-	classes = [cls]
-
-	while classes:
-		parent = classes.pop()
-
-		for child in parent.__subclasses__():
-			if child not in subclasses:
-				subclasses.add(child)
-				classes.append(child)
-
-	return subclasses
-
-
 def intid ():
 	""" Return pseudo-unique decimal id. """
 	return int((time() - 1374000000) * 100000) * 100 + randint(0, 99)
@@ -74,7 +56,7 @@ class IndexField (Field):
 		models = [self.owner(model_id) for model_id in ids]
 
 		if children:
-			for child in inheritors(self.owner):
+			for child in self.owner.inheritors():
 				key = self.idx_key(child.getprefix(), val)
 				ids = child.getdb().smembers(key)
 				models += [child(model_id) for model_id in ids]
@@ -159,7 +141,7 @@ class RangeIndexField (Field):
 		models = [self.owner(model_id) for model_id in ids]
 
 		if children:
-			for child in inheritors(self.owner):
+			for child in self.owner.inheritors():
 				key = self.idx_key(child.getprefix())
 				db = child.getdb()
 				ids = db.zrangebyscore(key, minval, maxval, start=start, num=num)
@@ -636,6 +618,23 @@ class Model (BaseModel):
 
 		for child in cls.__subclasses__():
 			child.free_all()
+
+	@classmethod
+	def inheritors (cls):
+		""" Get model inheritors. """
+
+		subclasses = set()
+		classes = [cls]
+
+		while classes:
+			parent = classes.pop()
+
+			for child in parent.__subclasses__():
+				if child not in subclasses:
+					subclasses.add(child)
+					classes.append(child)
+
+		return subclasses
 
 
 class FlaskRedisca (object):

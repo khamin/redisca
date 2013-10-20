@@ -5,7 +5,6 @@ from datetime import datetime
 from time import time
 from redis import Redis
 
-from redisca import inheritors
 from redisca import PY3K
 from redisca import Model
 from redisca import Field
@@ -561,7 +560,7 @@ class ModelTestCase (TestCase):
 		self.assertTrue(lang.active is False)
 
 	def test_inheritors (self):
-		children = inheritors(Language)
+		children = Language.inheritors()
 		self.assertEqual(children, set([SubLang]))
 
 	def test_find_children (self):
