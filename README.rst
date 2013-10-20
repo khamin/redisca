@@ -38,7 +38,7 @@ Model
 
 	   created = DateTime(
 		   field='created',	   # Define link with 'created' hash key.
-		   new=datetime.utcnow(), # Value which is used as default in User.new()
+		   new=datetime.utcnow, # Value which is used as default in User.new()
 	   )
 
 	   age = Integer(
@@ -72,7 +72,7 @@ Available parameters:
 -  **field** - hash field to store value in.
 -  **index** - makes field searchable.
 -  **unique** - tells that value should be unique across database. Model.save() will raise an Exception if model of same class already exists with given value.
--  **new** - field value which is used as default in Model.new()
+-  **new** - field value which is used as default in Model.new(). Functions, methods and built-in's are acceptable as callback values.
 
 Built-in fields:
 
