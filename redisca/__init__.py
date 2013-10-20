@@ -9,6 +9,7 @@ from sys import version_info
 from datetime import datetime
 from redis import StrictRedis
 from inspect import isfunction
+from inspect import ismethod
 
 
 PY3K = version_info[0] == 3
@@ -458,7 +459,8 @@ class Model (BaseModel):
 		""" Fill model with *new* values. """
 
 		for name, field in self.getfields().items():
-			val = field.new() if isfunction(field.new) else field.new
+			val = field.new
+			val = val() if isfunction(val) or ismethod(val) else val
 			setattr(self, name, val)
 
 		return self
