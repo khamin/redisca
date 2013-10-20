@@ -294,11 +294,11 @@ class Reference (IndexField):
 		else:
 			model[self.field] = None
 
-	def find (self, val):
+	def find (self, val, children=False):
 		if isinstance(val, Model):
 			val = val._id
 
-		return super(Reference, self).find(val)
+		return super(Reference, self).find(val, children=children)
 
 	def choice (self, val):
 		if isinstance(val, Model):
