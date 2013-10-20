@@ -65,6 +65,11 @@ class User (BaseModel):
 
 @conf(db=redis1)
 class Language (BaseModel):
+	created = DateTime(
+		field='created',
+		new=datetime.utcnow,
+	)
+
 	active = Bool (
 		field='active',
 		new=lambda: False,

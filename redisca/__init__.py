@@ -10,6 +10,7 @@ from datetime import datetime
 from redis import StrictRedis
 from inspect import isfunction
 from inspect import ismethod
+from inspect import isbuiltin
 
 
 PY3K = version_info[0] == 3
@@ -460,7 +461,7 @@ class Model (BaseModel):
 
 		for name, field in self.getfields().items():
 			val = field.new
-			val = val() if isfunction(val) or ismethod(val) else val
+			val = val() if isfunction(val) or ismethod(val) or isbuiltin(val) else val
 			setattr(self, name, val)
 
 		return self
