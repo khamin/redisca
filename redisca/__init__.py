@@ -208,6 +208,24 @@ class Email (IndexField):
 
 		return super(Email, self).__set__(model, value)
 
+	def idx_key (self, prefix, val):
+		if val is not None:
+			val = val.lower()
+
+		return super(Email, self).idx_key(prefix, val)
+
+	def find (self, val, children=False):
+		if val is not None:
+			val = val.lower()
+
+		return super(Email, self).find(val, children)
+
+	def choice (self, val, count=1):
+		if val is not None:
+			val = val.lower()
+
+		return super(Email, self).choice(val, count)
+
 
 class Integer (RangeIndexField):
 	def __init__ (self, minval=None, maxval=None, **kw):

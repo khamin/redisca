@@ -575,3 +575,12 @@ class ModelTestCase (TestCase):
 
 		languages = Language.active.find('0', children=True)
 		self.assertEqual(languages, [Language(1), SubLang(1)])
+
+	def test_email_ci (self):
+		user1 = User(1)
+		user1.email = 'FOO@BAR.COM'
+		self.assertEqual(user1.email, 'foo@bar.com')
+		user1.save()
+
+		self.assertEqual(User.email.find('FOO@BAR.COM'), [user1])
+		self.assertEqual(User.email.find('foo@bar.com'), [user1])
