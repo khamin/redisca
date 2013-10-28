@@ -200,8 +200,11 @@ class String (IndexField):
 
 class Email (IndexField):
 	def __set__ (self, model, value):
-		if value is not None and EMAIL_REGEXP.match(value) == None:
-			raise Exception('Email validation failed')
+		if value is not None:
+			value = value.lower()
+
+			if EMAIL_REGEXP.match(value) == None:
+				raise Exception('Email validation failed')
 
 		return super(Email, self).__set__(model, value)
 
