@@ -159,7 +159,9 @@ class RangeIndexField (Field):
 			if len(models) > 1 or len(models) == 1 and models[0] is not model:
 				raise Exception('Duplicate key error')
 
-		pipe.zadd(key, model._id, val)
+		pipe.zadd(key, **{
+			model._id: val
+		})
 
 	def del_idx (self, model, pipe=None):
 		key = self.idx_key(model.getprefix())
