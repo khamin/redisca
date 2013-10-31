@@ -7,17 +7,20 @@ clean:
 	-rm -rf build/
 	-rm -rf dist/
 
-test: clean
-	python setup.py test
+test: test2 test3 test-pypy
+	
 
-test-pypy: clean
-	pypy setup.py test
+test2: clean
+	python setup.py test
 
 test3: clean
 	python3.3 setup.py test
 
+test-pypy: clean
+	pypy setup.py test
+
 audit:
 	pylint --rcfile=pylintrc redisca/
 
-public: test test3
+public: test
 	python setup.py sdist upload
