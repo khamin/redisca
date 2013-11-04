@@ -334,7 +334,21 @@ class MetaModel (type):
 	def __new__ (mcs, name, bases, dct):
 		cls = super(MetaModel, mcs).__new__(mcs, name, bases, dct)
 		cls._objects = dict() # id -> model objects registry.
+		cls._fields = dict()
+
+		for name in dir(cls):
+			member = getattr(cls, name)
+
+			if isinstance(member, Field):
+				cls._fields[name] = member
+
 		return cls
+
+	def __setattr__ (cls, name, val):
+		if isinstance(val, Field):
+			cls._fields[name] = val
+
+		super(MetaModel, cls).__setattr__(name, val)
 
 	def __call__ (cls, model_id, *args, **kw):
 		if model_id is None:
@@ -455,15 +469,7 @@ class Model (BaseModel):
 	@classmethod
 	def getfields (cls):
 		""" Return name -> field dict of registered fields. """
-		fields = dict()
-
-		for name in dir(cls):
-			field = getattr(cls, name)
-
-			if isinstance(field, Field):
-				fields[name] = field
-
-		return fields
+		return cls._fields.copy()
 
 	def getid (self):
 		return self._id

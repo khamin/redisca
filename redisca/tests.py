@@ -96,6 +96,13 @@ class SubLang (Language):
 	pass
 
 
+SubLang.flag = String(
+	field='flag',
+)
+
+SubLang.foobar = 'foobar'
+
+
 class ModelTestCase (TestCase):
 	def setUp (self):
 		redis0.flushdb()
@@ -584,3 +591,30 @@ class ModelTestCase (TestCase):
 
 		self.assertEqual(User.email.find('FOO@BAR.COM'), [user1])
 		self.assertEqual(User.email.find('foo@bar.com'), [user1])
+
+	def test_getfields (self):
+		lang_fields = {
+			'created': Language.created,
+			'active': Language.active,
+			'name': Language.name,
+		}
+
+		user_fields = {
+			'created': BaseModel.created,
+			'email': User.email,
+			'password': User.password,
+			'name': User.name,
+			'age': User.age,
+			'lang': User.lang,
+		}
+
+		self.assertEqual(User.getfields(), user_fields)
+		self.assertEqual(Language.getfields(), lang_fields)
+		self.assertEqual(SubUser.getfields(), user_fields)
+
+		lang_fields.update({
+			'flag': SubLang.flag,
+		})
+
+		self.assertEqual(SubLang.getfields(), lang_fields)
+		self.assertEqual(SubLang.foobar, 'foobar')
