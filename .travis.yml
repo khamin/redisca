@@ -10,3 +10,7 @@ install:
   - pip install . --use-mirrors
 
 script: nosetests
+
+services:
+  - redis-server
+
