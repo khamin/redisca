@@ -684,7 +684,7 @@ class FlaskRedisca (object):
 		pass
 
 	def after_request (self, exc):
-		if self.autosave:
+		if exc is None and self.autosave:
 			Model.save_all()
 
 		Model.free_all()
