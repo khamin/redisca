@@ -536,7 +536,7 @@ class ModelTestCase (TestCase):
 
 	def test_bool (self):
 		lang = Language.new(1)
-		self.assertEqual(lang.active, False)
+		self.assertTrue(lang.active is False)
 
 		lang.active = 1
 		self.assertTrue(lang.active is True)

@@ -103,10 +103,15 @@ class Field (object):
 
 	def __get__ (self, model, owner):
 		self.owner = owner
-		return self if model is None else model[self.field]
+
+		if model is None:
+			return self
+
+		val = model[self.field]
+		return None if val is None else self.from_db(val)
 
 	def __set__ (self, model, value):
-		model[self.field] = value
+		model[self.field] = None if value is None else self.to_db(value)
 
 	def __lt__ (self, other):
 		return BExpr(operator=BExpr.LT, field=self, val=other)
@@ -123,11 +128,18 @@ class Field (object):
 	def __eq__ (self, other):
 		return BExpr(operator=BExpr.EQ, field=self, val=other)
 
+	def from_db (self, val):
+		return val
+
+	def to_db (self, val):
+		return str(val) if PY3K else unicode(val)
+
 
 class IndexField (Field):
 	""" Base class for fields with exact indexing. """
 
 	def idx_key (self, prefix, val):
+		val = self.to_db(val)
 		val = str(val) if PY3K else unicode(val)
 		return ':'.join((prefix, self.field, val))
 
@@ -219,6 +231,13 @@ class RangeIndexField (Field):
 
 		key = self.idx_key(self.owner.getprefix())
 		db = self.owner.getdb()
+
+		if type(minval) is not str:
+			minval = self.to_db(minval)
+
+		if type(maxval) is not str:
+			maxval = self.to_db(maxval)
+
 		ids = db.zrangebyscore(key, minval, maxval, start=start, num=num)
 		models = [self.owner(model_id) for model_id in ids]
 
@@ -242,7 +261,7 @@ class RangeIndexField (Field):
 				raise Exception('Duplicate key error')
 
 		pipe.zadd(key, **{
-			model._id: val
+			model._id: self.to_db(val)
 		})
 
 	def del_idx (self, model, pipe=None):
@@ -251,12 +270,11 @@ class RangeIndexField (Field):
 
 
 class Bool (IndexField):
-	def __get__ (self, model, owner):
-		self.owner = owner
-		return self if model is None else int(model[self.field]) is 1
+	def to_db (self, val):
+		return 1 if (val and val != '0') else 0
 
-	def __set__ (self, model, value):
-		model[self.field] = 1 if value else 0
+	def from_db (self, val):
+		return val == '1' or val == 1
 
 
 class String (IndexField):
@@ -321,15 +339,6 @@ class Integer (RangeIndexField):
 		self.minval = minval
 		self.maxval = maxval
 
-	def __get__ (self, model, owner):
-		self.owner = owner
-
-		if model is None:
-			return self
-
-		val = model[self.field]
-		return None if val is None else int(val)
-
 	def __set__ (self, model, value):
 		if value is not None:
 			value = int(value)
@@ -342,25 +351,19 @@ class Integer (RangeIndexField):
 
 		model[self.field] = value
 
+	def to_db (self, val):
+		return int(val)
+
+	def from_db (self, val):
+		return int(val)
+
 
 class DateTime (RangeIndexField):
-	def __get__ (self, model, owner):
-		self.owner = owner
+	def to_db (self, val):
+		return int(val.strftime('%s') if type(val) is datetime else val)
 
-		if model is None:
-			return self
-
-		val = model[self.field]
-		return None if val is None else datetime.fromtimestamp(int(val))
-
-	def __set__ (self, model, value):
-		if value is not None:
-			if type(value) is datetime:
-				value = value.strftime('%s')
-
-			value = int(value)
-
-		model[self.field] = value
+	def from_db (self, val):
+		return datetime.fromtimestamp(int(val))
 
 
 class MD5Pass (String):
@@ -382,23 +385,6 @@ class Reference (IndexField):
 		assert issubclass(cls, Model)
 		self._cls = cls
 
-	def __get__ (self, model, owner):
-		self.owner = owner
-
-		if model is None:
-			return self
-
-		model_id = model[self.field]
-		return None if model_id is None else self._cls(model_id)
-
-	def __set__ (self, model, parent):
-		if parent is not None:
-			assert parent.__class__ is self._cls
-			model[self.field] = parent._id
-
-		else:
-			model[self.field] = None
-
 	def find (self, val, children=False):
 		if isinstance(val, Model):
 			val = val._id
@@ -410,6 +396,12 @@ class Reference (IndexField):
 			val = val._id
 
 		return super(Reference, self).choice(val)
+
+	def to_db (self, val):
+		return val._id if isinstance(val, Model) else val
+
+	def from_db (self, val):
+		return self._cls(val)
 
 
 class MetaModel (type):
