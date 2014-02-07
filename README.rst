@@ -122,6 +122,8 @@ Subclasses of *RangeIndexField* has a limited support for ranged queries:
 
 	users = User.age >= 10 # User.age.range(minval=10)
 
+More complex queries are also possible:
+
 .. code:: python
 
 	# SELECT * FROM `users` where `age` BETWEEN 0 AND 100 LIMIT 10 OFFSET 50;
