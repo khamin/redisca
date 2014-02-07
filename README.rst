@@ -70,7 +70,7 @@ Field is the way how you should control data in your models. Just define class v
 
 Available parameters:
 
--  **field** - hash field to store value in.
+-  **field** - redis hash field name to store value in.
 -  **index** - makes field searchable.
 -  **unique** - tells that value should be unique across database. Model.save() will raise an Exception if model of same class already exists with given value.
 -  **new** - field value which is used as default in Model.new(). Functions, methods and built-in's are acceptable as callback values.
@@ -219,7 +219,7 @@ Flask Support
 
 	FlaskRedisca(app)
 
-Pass optional *autosave=True* parameter to FlaskRedisca constructor and *redisca* will save all known models at the end of request. Unchanged and deleted instances are ignored. If you want to skip locally changed instances use free() method during request life.
+Optional *autosave* constructor parameter tells *redisca* that all known models should be saved at the end of request (if no exception raised). Unchanged and deleted instances are ignored. If you want to skip locally changed instances use free() method during request life.
 
 Requirements
 ============
