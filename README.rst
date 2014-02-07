@@ -114,19 +114,18 @@ Find by Index
 
 .. code:: python
 
-	users = User.email.find('foo@bar.com') # List of matched models
+	users = User.email == 'foo@bar.com' # or User.email.find('foo@bar.com')
 
 Subclasses of *RangeIndexField* has a limited support for ranged queries:
 
 .. code:: python
 
+	users = User.age >= 10 # User.age.range(minval=10)
+
+.. code:: python
+
+	# SELECT * FROM `users` where `age` BETWEEN 0 AND 100 LIMIT 10 OFFSET 50;
 	users = User.age.range(minval=0, maxval=100, start=50, num=10)
-
-Such call is equivalent of:
-
-.. code:: sql
-
-	SELECT * FROM `users` where `age` BETWEEN 0 AND 100 LIMIT 10 OFFSET 50;
 
 Dict API
 ~~~~~~~~

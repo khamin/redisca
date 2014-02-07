@@ -27,6 +27,73 @@ def hexid ():
 	return '%x' % intid()
 
 
+class BExpr (object):
+	EQ = '='
+	GT = '>'
+	LT = '<'
+	GE = '>='
+	LE = '<='
+
+	def __init__ (self, operator, field, val):
+		assert isinstance(field, Field)
+
+		self.models = None
+		self.operator = operator
+		self.field = field
+		self.val = val
+
+		super(BExpr, self).__init__()
+
+	def __len__ (self):
+		self.load()
+		return len(self.models)
+
+	def __getitem__ (self, key):
+		self.load()
+		return self.models[key]
+
+	def __setitem__ (self, key, value):
+		raise NotImplementedError()
+
+	def __iter__ (self):
+		self.load()
+		return iter(self.models)
+
+	def __contains__ (self, item):
+		self.load()
+		return item in self.models
+
+	def loaded (self):
+		return self.models is not None
+
+	def unload (self):
+		self.models = None
+
+	def load (self):
+		""" Load result into expression. """
+
+		if self.loaded():
+			return
+
+		if self.operator == self.EQ:
+			self.models = self.field.find(self.val)
+
+		elif self.operator == self.GT:
+			self.models = self.field.range(minval='(%d' % int(self.val))
+
+		elif self.operator == self.GE:
+			self.models = self.field.range(minval=int(self.val))
+
+		elif self.operator == self.LT:
+			self.models = self.field.range(maxval='(%d' % int(self.val))
+
+		elif self.operator == self.LE:
+			self.models = self.field.range(maxval='%d' % int(self.val))
+
+		else:
+			raise Exception('Unsupported operator type given')
+
+
 class Field (object):
 	def __init__ (self, field, index=False, unique=False, new=None):
 		self.new = new
@@ -40,6 +107,21 @@ class Field (object):
 
 	def __set__ (self, model, value):
 		model[self.field] = value
+
+	def __lt__ (self, other):
+		return BExpr(operator=BExpr.LT, field=self, val=other)
+
+	def __le__ (self, other):
+		return BExpr(operator=BExpr.LE, field=self, val=other)
+
+	def __gt__ (self, other):
+		return BExpr(operator=BExpr.GT, field=self, val=other)
+
+	def __ge__ (self, other):
+		return BExpr(operator=BExpr.GE, field=self, val=other)
+
+	def __eq__ (self, other):
+		return BExpr(operator=BExpr.EQ, field=self, val=other)
 
 
 class IndexField (Field):

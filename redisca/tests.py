@@ -618,3 +618,50 @@ class ModelTestCase (TestCase):
 
 		self.assertEqual(SubLang.getfields(), lang_fields)
 		self.assertEqual(SubLang.foobar, 'foobar')
+
+	def test_idx_expr (self):
+		lang = Language.new(1)
+		lang.save()
+
+		for operand in ('0', 0):
+			langs = Language.active == operand
+
+			self.assertEqual(len(langs), 1)
+			self.assertTrue(lang in langs)
+			self.assertEqual(langs[0], lang)
+
+		for operand in ('1', 1):
+			langs = Language.active == operand
+			self.assertEqual(len(langs), 0)
+			self.assertTrue(lang not in langs)
+
+	def test_rande_idx_expr (self):
+		for i in range(1, 10):
+			user = User.new(i)
+			user.age = i
+
+		User.save_all()
+
+		users = User.age == 6
+		self.assertEqual(len(users), 1)
+		self.assertEqual(users[0], User(6))
+
+		users = User.age > 6
+		self.assertEqual(len(users), 3)
+		self.assertTrue(User(7) in users)
+		self.assertTrue(User(6) not in users)
+
+		users = User.age >= 6
+		self.assertEqual(len(users), 4)
+		self.assertTrue(User(6) in users)
+		self.assertTrue(User(5) not in users)
+
+		users = User.age < 6
+		self.assertEqual(len(users), 5)
+		self.assertTrue(User(5) in users)
+		self.assertTrue(User(6) not in users)
+
+		users = User.age <= 6
+		self.assertEqual(len(users), 6)
+		self.assertTrue(User(6) in users)
+		self.assertTrue(User(7) not in users)
