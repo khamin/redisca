@@ -553,9 +553,10 @@ class Model (BaseModel):
 
 	@classmethod
 	def getprefix (cls):
-		return Model._cls2prefix[cls] \
-			if cls in Model._cls2prefix \
-				else cls.__name__.lower()
+		if cls not in Model._cls2prefix:
+			Model._cls2prefix[cls] = cls.__name__.lower()
+
+		return Model._cls2prefix[cls]
 
 	@classmethod
 	def getpipe (cls, pipe=None):
