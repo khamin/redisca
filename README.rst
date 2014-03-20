@@ -3,6 +3,14 @@ Master branch: |Build Status|
 .. |Build Status| image:: https://travis-ci.org/khamin/redisca.png?branch=master
    :target: https://travis-ci.org/khamin/redisca
 
+Redisca2
+========
+
+Look at redisca2_ for new features.
+This version will receive bug fixes only.
+
+.. _redisca2: https://github.com/khamin/redisca2
+
 Installation
 ============
 
