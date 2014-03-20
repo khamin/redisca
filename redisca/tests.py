@@ -665,3 +665,19 @@ class ModelTestCase (TestCase):
 		self.assertEqual(len(users), 6)
 		self.assertTrue(User(6) in users)
 		self.assertTrue(User(7) not in users)
+
+	def test_issue1 (self):
+		user1 = User(1)
+ 
+		user1.email = 'foo@bar.com'
+		self.assertEqual(user1.email, 'foo@bar.com')
+ 
+		user1.save()
+		user1.load()
+ 
+		user1.email = 'bar@foo.org'
+		self.assertEqual(user1.email, 'bar@foo.org')
+ 
+		user1.email = 'foo@bar.com'
+		self.assertEqual(user1.email, 'foo@bar.com')
+		self.assertEqual(user1._diff, dict())

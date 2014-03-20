@@ -497,7 +497,8 @@ class Model (BaseModel):
 
 	def __setitem__ (self, name, value):
 		if self.loaded() and name in self._data and self._data[name] == value:
-			pass
+			if name in self._diff:
+				del self._diff[name]
 
 		else:
 			self._diff[name] = value
